@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<thing:thing-descriptions bindingId="rachio"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:thing="https://openhab.org/schemas/thing-description/v1.0.0"
+        xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
+        
+    <bridge-type id="cloud" listed="true">
+        <label>Rachio Cloud Connector</label>
+        <description>Connects openHAB to the Rachio cloud API</description>
+        <category>System</category>
+        <properties>
+            <property name="vendor">Rachio</property>
+            <property name="modelId">Rachio</property>
+        </properties>
+        <config-description-ref uri="thing-type:rachio:cloud"/>
+    </bridge-type>
+
+    <thing-type id="device" listed="true">
+        <supported-bridge-type-refs>
+            <bridge-type-ref id="cloud" />
+        </supported-bridge-type-refs>
+        <label>Rachio Sprinkler Controller</label>
+        <description>Represents a Rachio controller device with multiple zones</description>
+        <category>Lawn</category>
+        <properties>
+            <property name="vendor">Rachio</property>
+            <property name="modelId">Rachio Controller</property>
+        </properties>
+        <config-description-ref uri="thing-type:rachio:device"/>
+    </thing-type>
+
+    <thing-type id="zone" listed="true">
+        <supported-bridge-type-refs>
+            <bridge-type-ref id="cloud" />
+        </supported-bridge-type-refs>
+        <label>Rachio Sprinkler Zone</label>
+        <description>Represents a single irrigation zone controlled by a Rachio device</description>
+        <category>Lawn</category>
+        <properties>
+            <property name="vendor">Rachio</property>
+            <property name="modelId">Rachio Zone</property>
+        </properties>
+        <config-description-ref uri="thing-type:rachio:zone"/>
+    </thing-type>
+</thing:thing-descriptions>
