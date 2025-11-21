@@ -1,45 +1,143 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<thing:thing-descriptions bindingId="rachio"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns:thing="https://openhab.org/schemas/thing-description/v1.0.0"
-        xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
+<thing:things-descriptions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:thing="https://openhab.org/schemas/thing-description/v1.0.0"
+    xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
+
+    <!-- Rachio Cloud Bridge -->
+    <thing-type id="cloud">
+        <label>Rachio Cloud Bridge</label>
+        <description>Connects to Rachio Cloud API for sprinkler controller management</description>
+        <category>Network</category>
+        <supported-bridge-type-refs>
+            <bridge-type-ref id="cloud" />
+        </supported-bridge-type-refs>
+        <config-description-ref uri="thing-type:rachio:cloud" />
         
-    <bridge-type id="cloud" listed="true">
-        <label>Rachio Cloud Connector</label>
-        <description>Connects openHAB to the Rachio cloud API</description>
-        <category>System</category>
         <properties>
             <property name="vendor">Rachio</property>
-            <property name="modelId">Rachio</property>
         </properties>
-        <config-description-ref uri="thing-type:rachio:cloud"/>
-    </bridge-type>
+    </thing-type>
 
-    <thing-type id="device" listed="true">
-        <supported-bridge-type-refs>
-            <bridge-type-ref id="cloud" />
-        </supported-bridge-type-refs>
+    <!-- Rachio Device (Sprinkler Controller) -->
+    <thing-type id="device">
         <label>Rachio Sprinkler Controller</label>
-        <description>Represents a Rachio controller device with multiple zones</description>
-        <category>Lawn</category>
+        <description>Rachio Smart Sprinkler Controller Device</description>
+        <category>Irrigation</category>
+        <listed>true</listed>
+        <config-description-ref uri="thing-type:rachio:device" />
+        
         <properties>
             <property name="vendor">Rachio</property>
-            <property name="modelId">Rachio Controller</property>
         </properties>
-        <config-description-ref uri="thing-type:rachio:device"/>
+        
+        <channels>
+            <!-- Device Information Channels -->
+            <channel id="name" typeId="name">
+                <label>Device Name</label>
+                <description>Name of the Rachio device</description>
+            </channel>
+            <channel id="online" typeId="online">
+                <label>Online Status</label>
+                <description>Whether the device is connected to the cloud</description>
+            </channel>
+            <channel id="active" typeId="active">
+                <label>Active Status</label>
+                <description>Whether the device is active/enabled</description>
+            </channel>
+            <channel id="paused" typeId="paused">
+                <label>Paused Status</label>
+                <description>Whether the device is in sleep/pause mode</description>
+            </channel>
+            
+            <!-- Control Channels -->
+            <channel id="run" typeId="run">
+                <label>Start Watering</label>
+                <description>Start watering with current zone selection</description>
+            </channel>
+            <channel id="stop" typeId="stop">
+                <label>Stop Watering</label>
+                <description>Stop all watering activities</description>
+            </channel>
+            <channel id="runZones" typeId="runZones">
+                <label>Zone Selection</label>
+                <description>Comma-separated list of zones to run (empty for all)</description>
+            </channel>
+            <channel id="runTime" typeId="runTime">
+                <label>Default Runtime</label>
+                <description>Default runtime in seconds for zones</description>
+            </channel>
+            <channel id="rainDelay" typeId="rainDelay">
+                <label>Rain Delay</label>
+                <description>Set rain delay in seconds</description>
+            </channel>
+            
+            <!-- Status Channels -->
+            <channel id="event" typeId="event">
+                <label>Last Event</label>
+                <description>Last event received from the device</description>
+            </channel>
+            <channel id="latitude" typeId="latitude">
+                <label>Latitude</label>
+                <description>Device location latitude</description>
+            </channel>
+            <channel id="longitude" typeId="longitude">
+                <label>Longitude</label>
+                <description>Device location longitude</description>
+            </channel>
+            <channel id="scheduleName" typeId="scheduleName">
+                <label>Current Schedule</label>
+                <description>Name of currently running schedule</description>
+            </channel>
+        </channels>
     </thing-type>
 
-    <thing-type id="zone" listed="true">
-        <supported-bridge-type-refs>
-            <bridge-type-ref id="cloud" />
-        </supported-bridge-type-refs>
-        <label>Rachio Sprinkler Zone</label>
-        <description>Represents a single irrigation zone controlled by a Rachio device</description>
-        <category>Lawn</category>
+    <!-- Rachio Zone -->
+    <thing-type id="zone">
+        <label>Rachio Irrigation Zone</label>
+        <description>Individual irrigation zone for Rachio sprinkler controller</description>
+        <category>Irrigation</category>
+        <listed>true</listed>
+        <config-description-ref uri="thing-type:rachio:zone" />
+        
         <properties>
             <property name="vendor">Rachio</property>
-            <property name="modelId">Rachio Zone</property>
         </properties>
-        <config-description-ref uri="thing-type:rachio:zone"/>
+        
+        <channels>
+            <!-- Zone Information Channels -->
+            <channel id="name" typeId="zoneName">
+                <label>Zone Name</label>
+                <description>Name of the irrigation zone</description>
+            </channel>
+            <channel id="number" typeId="zoneNumber">
+                <label>Zone Number</label>
+                <description>Zone number on the controller</description>
+            </channel>
+            <channel id="enabled" typeId="zoneEnabled">
+                <label>Zone Enabled</label>
+                <description>Whether the zone is enabled</description>
+            </channel>
+            
+            <!-- Control Channels -->
+            <channel id="run" typeId="zoneRun">
+                <label>Run Zone</label>
+                <description>Start/stop this individual zone</description>
+            </channel>
+            <channel id="runTime" typeId="zoneRunTime">
+                <label>Zone Runtime</label>
+                <description>Runtime in seconds for this zone</description>
+            </channel>
+            
+            <!-- Status Channels -->
+            <channel id="runTotal" typeId="zoneRunTotal">
+                <label>Total Runtime</label>
+                <description>Total runtime in seconds for this zone</description>
+            </channel>
+            <channel id="imageUrl" typeId="zoneImageUrl">
+                <label>Zone Image</label>
+                <description>URL to zone image</description>
+            </channel>
+        </channels>
     </thing-type>
-</thing:thing-descriptions>
+
+</thing:things-descriptions>
