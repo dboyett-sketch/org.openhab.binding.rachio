@@ -2,12 +2,12 @@ package org.openhab.binding.rachio.internal.api;
 
 import static org.openhab.binding.rachio.RachioBindingConstants.*;
 
-import java.time.Instant;
-
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.security.MessageDigest;
 import java.text.MessageFormat;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -20,6 +20,9 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.TypeAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
 
 public class RachioApi {
     private static final Logger logger = LoggerFactory.getLogger(RachioApi.class);
@@ -30,8 +33,7 @@ public class RachioApi {
         .excludeFieldsWithModifiers(Modifier.TRANSIENT, Modifier.STATIC)
         .disableHtmlEscaping()
         .serializeNulls()
-        .registerTypeAdapterFactory(new SafeReflectiveTypeAdapterFactory())
-        .registerTypeAdapter(Instant.class, new InstantTypeAdapter()) // ← Add this line
+        .registerTypeAdapter(Instant.class, new InstantTypeAdapter())
         .create();
 
     public static class RachioApiResult {
@@ -114,7 +116,8 @@ public class RachioApi {
         String hash = "OH_" + getMD5Hash(apikey) + "_" + externalIdSalt;
         return getMD5Hash(hash);
     }
-        public boolean initialize(String apikey, ThingUID bridgeUID) throws RachioApiException {
+
+    public boolean initialize(String apikey, ThingUID bridgeUID) throws RachioApiException {
         this.apikey = apikey;
         httpApi = new RachioHttp(this.apikey);
 
@@ -208,7 +211,8 @@ public class RachioApi {
         }
         return null;
     }
-        public void stopWatering(String deviceId) throws RachioApiException {
+
+    public void stopWatering(String deviceId) throws RachioApiException {
         logger.debug("RachioApi: Stop watering for device '{}'", deviceId);
         httpApi.httpPut(APIURL_BASE + APIURL_DEV_PUT_STOP, "{ \"id\" : \"" + deviceId + "\" }");
     }
@@ -288,7 +292,8 @@ public class RachioApi {
 
         httpApi.httpPost(APIURL_BASE + APIURL_DEV_POST_WEBHOOK, jsonData);
     }
-        public Map<String, String> fillProperties() {
+
+    public Map<String, String> fillProperties() {
         Map<String, String> properties = new HashMap<>();
         properties.put(Thing.PROPERTY_VENDOR, BINDING_VENDOR);
         properties.put(PROPERTY_APIKEY, apikey);
