@@ -7,7 +7,6 @@ import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ReferencePolicy;
 import org.osgi.service.http.HttpService;
 import org.osgi.service.http.NamespaceException;
 import org.slf4j.Logger;
@@ -17,11 +16,13 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
 
-import static org.openhab.binding.rachio.RachioBindingConstants.SERVLET_IMAGE_PATH;
+import static org.openhab.binding.rachio.RachioBindingConstants.*;
 
 /**
  * The {@link RachioImageServlet} serves zone images from Rachio CDN
@@ -72,25 +73,44 @@ public class RachioImageServlet extends HttpServlet {
                 return;
             }
 
+            // Validate that it's a Rachio image URL for security
+            if (!imageUrl.startsWith(SERVLET_IMAGE_URL_BASE)) {
+                logger.warn("RachioImageServlet: Rejected non-Rachio image URL: {}", imageUrl);
+                resp.sendError(HttpServletResponse.SC_FORBIDDEN, "Invalid image source");
+                return;
+            }
+
             logger.debug("RachioImageServlet: Serving image from {}", imageUrl);
             
             URL url = new URL(imageUrl);
             URLConnection connection = url.openConnection();
-            connection.setRequestProperty("User-Agent", "Mozilla/5.0");
+            connection.setRequestProperty("User-Agent", SERVLET_WEBHOOK_USER_AGENT);
+            connection.setConnectTimeout(10000);
+            connection.setReadTimeout(10000);
             
-            resp.setContentType(connection.getContentType());
-            resp.setContentLength(connection.getContentLength());
+            // Set response headers
+            resp.setContentType(SERVLET_IMAGE_MIME_TYPE);
+            resp.setHeader("Cache-Control", "public, max-age=3600"); // Cache for 1 hour
             
-            try (var inputStream = connection.getInputStream();
-                 var outputStream = resp.getOutputStream()) {
-                inputStream.transferTo(outputStream);
+            // Stream the image data
+            try (BufferedInputStream input = new BufferedInputStream(connection.getInputStream());
+                 BufferedOutputStream output = new BufferedOutputStream(resp.getOutputStream())) {
+                
+                byte[] buffer = new byte[8192];
+                int bytesRead;
+                while ((bytesRead = input.read(buffer)) != -1) {
+                    output.write(buffer, 0, bytesRead);
+                }
+                output.flush();
             }
             
-            logger.trace("RachioImageServlet: Image served successfully");
+            logger.trace("RachioImageServlet: Image served successfully from {}", imageUrl);
 
         } catch (Exception e) {
             logger.error("RachioImageServlet: Error serving image: {}", e.getMessage());
-            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error retrieving image");
+            if (!resp.isCommitted()) {
+                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error retrieving image");
+            }
         }
     }
 
