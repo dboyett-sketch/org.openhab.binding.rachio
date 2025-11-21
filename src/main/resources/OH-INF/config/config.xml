@@ -1,1 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config-descriptions xmlns="http://docs.openhab.org/schemas/config-description/v1.0.0">
+    
+    <!-- Bridge Configuration -->
+    <config-description uri="thing-type:rachio:cloud">
+        <parameter name="apikey" type="text">
+            <label>API Key</label>
+            <description>Rachio API Key from https://app.rach.io/</description>
+            <required>true</required>
+        </parameter>
+        <parameter name="pollingInterval" type="integer">
+            <label>Polling Interval</label>
+            <description>Seconds between fetching values from cloud service</description>
+            <default>120</default>
+            <min>30</min>
+        </parameter>
+        <parameter name="defaultRuntime" type="integer">
+            <label>Default Runtime</label>
+            <description>Default seconds to run a zone</description>
+            <default>120</default>
+            <min>30</min>
+        </parameter>
+        <parameter name="callbackUrl" type="text">
+            <label>Callback URL</label>
+            <description>Webhook callback URL for real-time updates</description>
+        </parameter>
+        <parameter name="clearAllCallbacks" type="boolean">
+            <label>Clear All Callbacks</label>
+            <description>Clear all existing webhook callbacks when binding starts</description>
+            <default>false</default>
+        </parameter>
+        <parameter name="ipFilter" type="text">
+            <label>IP Filter</label>
+            <description>IP address filter for webhook callbacks</description>
+        </parameter>
+    </config-description>
 
+    <!-- Device Configuration -->
+    <config-description uri="thing-type:rachio:device">
+        <parameter name="deviceId" type="text">
+            <label>Device ID</label>
+            <description>Rachio Device ID</description>
+            <required>true</required>
+        </parameter>
+    </config-description>
+
+    <!-- Zone Configuration -->
+    <config-description uri="thing-type:rachio:zone">
+        <parameter name="zoneId" type="text">
+            <label>Zone ID</label>
+            <description>Rachio Zone ID</description>
+            <required>true</required>
+        </parameter>
+        <parameter name="runtime" type="integer">
+            <label>Runtime</label>
+            <description>Default runtime in seconds for this zone</description>
+            <default>300</default>
+            <min>30</min>
+        </parameter>
+    </config-description>
+
+</config-descriptions>
