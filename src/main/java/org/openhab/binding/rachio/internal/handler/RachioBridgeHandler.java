@@ -5,6 +5,9 @@ import static org.openhab.binding.rachio.RachioBindingConstants.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
@@ -17,23 +20,35 @@ import org.openhab.binding.rachio.internal.api.RachioEvent;
 import org.openhab.binding.rachio.internal.api.RachioImageServlet;
 import org.openhab.binding.rachio.internal.api.RachioWebHookServlet;
 import org.openhab.core.thing.Bridge;
+import org.openhab.core.thing.ChannelUID;
+import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingStatus;
 import org.openhab.core.thing.ThingStatusDetail;
+import org.openhab.core.thing.ThingTypeUID;
 import org.openhab.core.thing.ThingUID;
 import org.openhab.core.thing.binding.BaseBridgeHandler;
 import org.openhab.core.thing.binding.ThingHandler;
+import org.openhab.core.thing.binding.builder.ThingBuilder;
 import org.openhab.core.types.Command;
+import org.openhab.core.types.RefreshType;
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
+import org.osgi.service.component.annotations.Modified;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.ReferencePolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Component(service = ThingHandler.class)
+@Component(service = ThingHandler.class, configurationPid = "bridge.rachio", configurationPolicy = ConfigurationPolicy.OPTIONAL)
 @NonNullByDefault
 public class RachioBridgeHandler extends BaseBridgeHandler {
-    private final Logger rachioLogger = LoggerFactory.getLogger(RachioBridgeHandler.class);
+    private final Logger logger = LoggerFactory.getLogger(RachioBridgeHandler.class);
 
-    private @Nullable RachioConfiguration thingConfig;
+    private @Nullable RachioConfiguration config;
     private @Nullable RachioApi api;
+    private @Nullable ScheduledFuture<?> pollingJob;
 
     private @Nullable RachioImageServlet imageServlet;
     private @Nullable RachioWebHookServlet webHookServlet;
@@ -44,56 +59,115 @@ public class RachioBridgeHandler extends BaseBridgeHandler {
         super(bridge);
     }
 
+    @Activate
+    public void activate() {
+        logger.debug("RachioBridgeHandler: Activating bridge '{}'", getThing().getUID());
+    }
+
+    @Modified
+    protected void modified(Map<String, Object> configuration) {
+        logger.debug("RachioBridgeHandler: Configuration modified for bridge '{}'", getThing().getUID());
+        dispose();
+        initialize();
+    }
+
     @Override
     public void initialize() {
-        rachioLogger.debug("RachioBridgeHandler: Initializing bridge '{}'", getThing().getUID());
+        logger.debug("RachioBridgeHandler: Initializing bridge '{}'", getThing().getUID());
 
-        try {
-            thingConfig = getConfigAs(RachioConfiguration.class);
+        config = getConfigAs(RachioConfiguration.class);
+        if (config == null) {
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "Missing configuration");
+            return;
+        }
 
-            if (thingConfig != null) {
-                thingConfig.updateConfig(getConfig().getProperties());
-                rachioLogger.debug("RachioBridgeHandler: Configuration loaded: {}", thingConfig);
-            } else {
-                rachioLogger.warn("RachioBridgeHandler: No configuration available");
-                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "Missing configuration");
-                return;
+        if (config.apikey == null || config.apikey.trim().isEmpty()) {
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "API key is required");
+            return;
+        }
+
+        scheduler.execute(() -> {
+            try {
+                initializeBridge();
+            } catch (Exception e) {
+                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.getMessage());
             }
+        });
+    }
 
+    private void initializeBridge() {
+        try {
             api = new RachioApi("");
-            if (!api.initialize(thingConfig.apikey, getThing().getUID())) {
+            if (!api.initialize(config.apikey, getThing().getUID())) {
                 updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "API initialization failed");
                 return;
             }
 
             updateStatus(ThingStatus.ONLINE);
-            rachioLogger.info("RachioBridgeHandler: Bridge initialized successfully");
+            logger.info("RachioBridgeHandler: Bridge initialized successfully for user {}", config.apikey.substring(0, 8) + "...");
+
+            // Start polling if configured
+            startPolling();
 
         } catch (Exception e) {
-            rachioLogger.error("RachioBridgeHandler: Initialization failed: {}", e.getMessage(), e);
+            logger.error("RachioBridgeHandler: Initialization failed: {}", e.getMessage(), e);
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.getMessage());
+        }
+    }
+
+    private void startPolling() {
+        stopPolling();
+        
+        if (config != null && config.pollingInterval > 0) {
+            pollingJob = scheduler.scheduleWithFixedDelay(this::refreshThings, 10, config.pollingInterval, TimeUnit.SECONDS);
+            logger.debug("RachioBridgeHandler: Started polling with interval {} seconds", config.pollingInterval);
+        }
+    }
+
+    private void stopPolling() {
+        if (pollingJob != null) {
+            pollingJob.cancel(true);
+            pollingJob = null;
+        }
+    }
+
+    private void refreshThings() {
+        try {
+            if (api != null) {
+                // Refresh device states
+                for (RachioStatusListener listener : listeners) {
+                    listener.onRefreshRequested();
+                }
+            }
+        } catch (Exception e) {
+            logger.debug("RachioBridgeHandler: Error during refresh: {}", e.getMessage());
         }
     }
 
     @Override
     public void dispose() {
-        rachioLogger.debug("RachioBridgeHandler: Disposing bridge '{}'", getThing().getUID());
-        api = null;
+        logger.debug("RachioBridgeHandler: Disposing bridge '{}'", getThing().getUID());
+        stopPolling();
         listeners.clear();
+        api = null;
         super.dispose();
     }
 
     @Override
-    public void handleCommand(org.openhab.core.thing.ChannelUID channelUID, Command command) {
-        rachioLogger.debug("RachioBridgeHandler: Command {} received for channel {}", command, channelUID);
+    public void handleCommand(ChannelUID channelUID, Command command) {
+        logger.debug("RachioBridgeHandler: Command {} received for channel {}", command, channelUID);
+        
+        if (command instanceof RefreshType) {
+            // Handle refresh if needed
+        }
     }
 
     public String getApiKey() {
-        return thingConfig != null ? thingConfig.apikey : "";
+        return config != null ? config.apikey : "";
     }
 
     public int getDefaultRuntime() {
-        return thingConfig != null ? thingConfig.defaultRuntime : 120;
+        return config != null ? config.defaultRuntime : 120;
     }
 
     public @Nullable RachioDevice getDevByUID(ThingUID thingUID) {
@@ -117,8 +191,13 @@ public class RachioBridgeHandler extends BaseBridgeHandler {
     public void registerStatusListener(RachioStatusListener listener) {
         if (!listeners.contains(listener)) {
             listeners.add(listener);
-            rachioLogger.debug("RachioBridgeHandler: Registered status listener {}", listener.getClass().getSimpleName());
+            logger.debug("RachioBridgeHandler: Registered status listener {}", listener.getClass().getSimpleName());
         }
+    }
+
+    public void unregisterStatusListener(RachioStatusListener listener) {
+        listeners.remove(listener);
+        logger.debug("RachioBridgeHandler: Unregistered status listener {}", listener.getClass().getSimpleName());
     }
 
     public void startZone(String zoneId, int runtime) throws RachioApiException {
@@ -174,7 +253,7 @@ public class RachioBridgeHandler extends BaseBridgeHandler {
             deviceId = localApi.getDevices().entrySet().iterator().next().getKey();
         }
         if (deviceId.isEmpty()) {
-            rachioLogger.warn("RachioBridgeHandler: No devices available to register webhook");
+            logger.warn("RachioBridgeHandler: No devices available to register webhook");
             return;
         }
         localApi.registerWebHook(deviceId, callbackUrl, externalId, Boolean.TRUE);
@@ -192,7 +271,7 @@ public class RachioBridgeHandler extends BaseBridgeHandler {
         if (localApi == null) {
             return;
         }
-        rachioLogger.debug("RachioBridgeHandler: Received webhook event type={} deviceId={} zoneId={}",
+        logger.debug("RachioBridgeHandler: Received webhook event type={} deviceId={} zoneId={}",
                 event.eventType, event.deviceId, event.zoneId);
 
         RachioDevice dev = null;
@@ -224,7 +303,7 @@ public class RachioBridgeHandler extends BaseBridgeHandler {
             try {
                 listener.onThingStateChanged(dev, zone);
             } catch (Exception e) {
-                rachioLogger.warn("RachioBridgeHandler: Listener {} threw: {}", listener.getClass().getSimpleName(), e.getMessage());
+                logger.warn("RachioBridgeHandler: Listener {} threw: {}", listener.getClass().getSimpleName(), e.getMessage());
             }
         }
     }
@@ -240,7 +319,7 @@ public class RachioBridgeHandler extends BaseBridgeHandler {
     }
 
     public @Nullable RachioConfiguration getThingConfig() {
-        return thingConfig;
+        return config;
     }
 
     public @Nullable RachioImageServlet getImageServlet() {
