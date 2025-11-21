@@ -1,79 +1,76 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
-                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <!-- Standard OpenHAB binding groupId -->
     <groupId>org.openhab.addons.bundles</groupId>
     <artifactId>org.openhab.binding.rachio</artifactId>
     <version>5.0.0</version>
     <packaging>bundle</packaging>
 
-    <name>Rachio Binding</name>
-    <description>Rachio sprinkler controller binding for openHAB</description>
+    <name>openHAB Add-ons :: Bundles :: Rachio Binding</name>
+    <description>Binding for Rachio smart irrigation controllers</description>
+    <url>https://www.openhab.org</url>
 
-    <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <oh.version>5.0.0</oh.version>
-    </properties>
-
-    <!-- OpenHAB Maven Repositories -->
     <repositories>
         <repository>
             <id>openhab-releases</id>
             <url>https://openhab.jfrog.io/artifactory/libs-release</url>
         </repository>
+        <!-- Uncomment for snapshots:
         <repository>
             <id>openhab-snapshots</id>
             <url>https://openhab.jfrog.io/artifactory/libs-snapshot</url>
         </repository>
+        -->
     </repositories>
 
+    <pluginRepositories>
+        <pluginRepository>
+            <id>openhab-releases</id>
+            <url>https://openhab.jfrog.io/artifactory/libs-release</url>
+        </pluginRepository>
+        <pluginRepository>
+            <id>eclipse</id>
+            <url>https://repo.eclipse.org/content/groups/releases/</url>
+        </pluginRepository>
+    </pluginRepositories>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <bundle.category>openhab-addons</bundle.category>
+    </properties>
+
     <dependencies>
-        <!-- OpenHAB Core Dependencies -->
+        <!-- openHAB Core APIs - OH5 versions -->
         <dependency>
-            <groupId>org.openhab.core</groupId>
+            <groupId>org.openhab.core.bundles</groupId>
             <artifactId>org.openhab.core.config.core</artifactId>
-            <version>${oh.version}</version>
+            <version>5.0.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.openhab.core</groupId>
+            <groupId>org.openhab.core.bundles</groupId>
             <artifactId>org.openhab.core.config.discovery</artifactId>
-            <version>${oh.version}</version>
+            <version>5.0.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.openhab.core</groupId>
+            <groupId>org.openhab.core.bundles</groupId>
             <artifactId>org.openhab.core.thing</artifactId>
-            <version>${oh.version}</version>
+            <version>5.0.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.openhab.core</groupId>
+            <groupId>org.openhab.core.bundles</groupId>
             <artifactId>org.openhab.core.i18n</artifactId>
-            <version>${oh.version}</version>
+            <version>5.0.0</version>
             <scope>provided</scope>
         </dependency>
-        
-        <!-- JSON Processing -->
-        <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-            <version>2.8.9</version>
-        </dependency>
-        
-        <!-- HTTP Client -->
-        <dependency>
-            <groupId>org.apache.httpcomponents.client5</groupId>
-            <artifactId>httpclient5</artifactId>
-            <version>5.1.3</version>
-        </dependency>
-        
+
         <!-- Logging -->
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -81,62 +78,114 @@
             <version>2.0.9</version>
             <scope>provided</scope>
         </dependency>
-        
-        <!-- Unit Testing -->
+
+        <!-- JSON Processing -->
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.13.2</version>
-            <scope>test</scope>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.10.1</version>
+        </dependency>
+
+        <!-- HTTP Client -->
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+            <version>5.1.3</version>
+        </dependency>
+
+        <!-- OSGi Core and Declarative Services -->
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.core</artifactId>
+            <version>6.0.0</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-            <version>4.11.0</version>
-            <scope>test</scope>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.service.component.annotations</artifactId>
+            <version>1.5.0</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.service.component</artifactId>
+            <version>1.4.0</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.felix</groupId>
+                    <artifactId>maven-bundle-plugin</artifactId>
+                    <version>5.1.4</version>
+                    <extensions>true</extensions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <includes>
+                    <include>**/*.xml</include>
+                    <include>**/*.properties</include>
+                </includes>
+                <filtering>false</filtering>
+            </resource>
+        </resources>
+
         <plugins>
-            <!-- Maven Bundle Plugin for OSGi -->
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
-                <version>5.1.9</version>
+                <version>5.1.4</version>
                 <extensions>true</extensions>
                 <configuration>
                     <instructions>
-                        <Bundle-Name>${project.name}</Bundle-Name>
                         <Bundle-SymbolicName>org.openhab.binding.rachio</Bundle-SymbolicName>
+                        <Bundle-Name>openHAB Add-ons :: Bundles :: Rachio Binding</Bundle-Name>
+                        <Bundle-Description>Binding for Rachio smart irrigation controllers</Bundle-Description>
+                        <Bundle-Vendor>openHAB Community</Bundle-Vendor>
                         <Bundle-Version>${project.version}</Bundle-Version>
-                        <Export-Package>org.openhab.binding.rachio.*;version=${project.version}</Export-Package>
+                        <Bundle-Category>binding</Bundle-Category>
+                        <Include-Resource>
+                            OH-INF/thing/thing-types.xml=src/main/resources/OH-INF/thing/thing-types.xml,
+                            OH-INF/channel/channel-types.xml=src/main/resources/OH-INF/channel/channel-types.xml,
+                            OH-INF/config/config.xml=src/main/resources/OH-INF/config/config.xml,
+                            OSGI-INF/binding/binding.xml=src/main/resources/OSGI-INF/binding/binding.xml,
+                            binding.properties=src/main/resources/binding.properties,
+                            {maven-resources}
+                        </Include-Resource>
+                        <Openhab-Binding>true</Openhab-Binding>
+                        <_dsannotations>*</_dsannotations>
+                        <Service-Component>*</Service-Component>
+                        <Meta-Persistence>OSGI-INF/binding/binding.xml</Meta-Persistence>
                         <Import-Package>
-                            org.openhab.core.config.core.*;version="[5.0,6.0)",
-                            org.openhab.core.config.discovery.*;version="[5.0,6.0)",
-                            org.openhab.core.thing.*;version="[5.0,6.0)",
-                            org.openhab.core.i18n.*;version="[5.0,6.0)",
-                            org.osgi.service.cm;version="[1.5,2.0)",
-                            org.osgi.service.component;version="[1.3,2.0)",
-                            org.osgi.service.event;version="[1.3,2.0)",
-                            org.osgi.service.http;version="[1.2,2.0)",
-                            org.osgi.framework;version="[1.8,2.0)",
-                            org.osgi.dto;version="[1.0,2.0)",
-                            org.osgi.annotation.versioning;version="[1.0,2.0)",
-                            com.google.gson;version="[2.8,3.0)",
-                            org.apache.hc.client5.http.*;version="[5.1,6.0)",
-                            org.apache.hc.core5.http.*;version="[5.1,6.0)",
-                            org.slf4j;version="[1.7,3.0)",
+                            org.openhab.core.*;version="[5.0,6)",
+                            org.osgi.framework,
+                            org.osgi.service.*,
+                            org.osgi.util.tracker,
+                            org.osgi.service.component.annotations;version="[1.5,2)",
+                            org.slf4j;version="[2.0,3)",
+                            com.google.gson,
+                            org.apache.hc.client5.http.*,
+                            org.apache.hc.core5.http.*,
                             *
                         </Import-Package>
-                        <!-- Removed Bundle-Activator since we use DS annotations -->
-                        <Service-Component>OSGI-INF/*.xml</Service-Component>
-                        <Private-Package>org.openhab.binding.rachio.internal</Private-Package>
+                        <Export-Package>
+                            org.openhab.binding.rachio;version="${project.version}"
+                        </Export-Package>
+                        <Private-Package>
+                            org.openhab.binding.rachio.internal.*
+                        </Private-Package>
                     </instructions>
                 </configuration>
             </plugin>
             
-            <!-- Compiler Plugin -->
+            <!-- Compiler Plugin - Java 17 for OH5 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -146,21 +195,6 @@
                     <target>17</target>
                     <encoding>UTF-8</encoding>
                 </configuration>
-            </plugin>
-
-            <!-- BND Plugin for DS annotations processing -->
-            <plugin>
-                <groupId>biz.aQute.bnd</groupId>
-                <artifactId>bnd-maven-plugin</artifactId>
-                <version>6.4.0</version>
-                <executions>
-                    <execution>
-                        <id>bnd-process</id>
-                        <goals>
-                            <goal>bnd-process</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>
