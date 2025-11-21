@@ -19,7 +19,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 
-import static org.openhab.binding.rachio.RachioBindingConstants.SERVLET_WEBHOOK_PATH;
+import static org.openhab.binding.rachio.RachioBindingConstants.*;
 
 /**
  * The {@link RachioWebHookServlet} handles webhook callbacks from Rachio cloud
@@ -63,6 +63,10 @@ public class RachioWebHookServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        // Set response content type first
+        resp.setContentType(SERVLET_WEBHOOK_APPLICATION_JSON);
+        resp.setCharacterEncoding(SERVLET_WEBHOOK_CHARSET);
+
         try {
             // Read the JSON payload
             StringBuilder payload = new StringBuilder();
@@ -74,12 +78,26 @@ public class RachioWebHookServlet extends HttpServlet {
             }
 
             String jsonPayload = payload.toString();
+            if (jsonPayload.isEmpty()) {
+                logger.warn("RachioWebHookServlet: Empty webhook payload received");
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                return;
+            }
+
             logger.debug("RachioWebHookServlet: Received webhook payload: {}", jsonPayload);
 
             // Parse the event
             RachioEvent event = RachioEvent.fromJson(jsonPayload);
             if (event == null) {
-                logger.warn("RachioWebHookServlet: Unable to parse webhook payload");
+                logger.warn("RachioWebHookServlet: Unable to parse webhook payload: {}", jsonPayload);
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                return;
+            }
+
+            // Validate required event fields
+            if (event.eventType == null || event.deviceId == null) {
+                logger.warn("RachioWebHookServlet: Missing required event fields: type={}, deviceId={}", 
+                           event.eventType, event.deviceId);
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 return;
             }
@@ -89,16 +107,27 @@ public class RachioWebHookServlet extends HttpServlet {
             if (localBridgeHandler != null) {
                 localBridgeHandler.webHookEvent(event);
                 resp.setStatus(HttpServletResponse.SC_OK);
-                logger.trace("RachioWebHookServlet: Webhook event processed successfully");
+                logger.trace("RachioWebHookServlet: Webhook event processed successfully - type: {}, device: {}", 
+                           event.eventType, event.deviceId);
             } else {
-                logger.warn("RachioWebHookServlet: No bridge handler available");
+                logger.warn("RachioWebHookServlet: No bridge handler available for event");
                 resp.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
             }
 
         } catch (Exception e) {
-            logger.error("RachioWebHookServlet: Error processing webhook: {}", e.getMessage());
+            logger.error("RachioWebHookServlet: Error processing webhook: {}", e.getMessage(), e);
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        // Respond to GET requests (health check)
+        resp.setContentType("text/plain");
+        resp.setCharacterEncoding("UTF-8");
+        resp.setStatus(HttpServletResponse.SC_OK);
+        resp.getWriter().write("Rachio WebHook Servlet is active");
+        logger.trace("RachioWebHookServlet: Health check received");
     }
 
     @Override
