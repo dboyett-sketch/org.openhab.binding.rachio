@@ -1,4 +1,4 @@
-package org.openhab.binding.rachio.internal.config;
+package org.openhab.binding.rachio.internal;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
