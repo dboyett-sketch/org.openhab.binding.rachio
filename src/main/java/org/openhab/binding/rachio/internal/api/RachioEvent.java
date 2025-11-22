@@ -1,7 +1,7 @@
 package org.openhab.binding.rachio.internal.api;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 
 /**
  * The {@link RachioEvent} is responsible for holding
@@ -12,10 +12,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 @NonNullByDefault
 public class RachioEvent {
-    private final String deviceId;
-    private final String eventType;
-    private final String summary;
-    private final String eventId;
+    private String deviceId;
+    private String eventType;
+    private String summary;
+    private String eventId;
+
+    // Default constructor for Gson
+    public RachioEvent() {
+        this.deviceId = "";
+        this.eventType = "";
+        this.summary = "";
+        this.eventId = "";
+    }
 
     public RachioEvent(String deviceId, String eventType, String summary, String eventId) {
         this.deviceId = deviceId;
@@ -28,22 +36,38 @@ public class RachioEvent {
         return deviceId;
     }
 
+    public void setDeviceId(String deviceId) {
+        this.deviceId = deviceId;
+    }
+
     public String getEventType() {
         return eventType;
+    }
+
+    public void setEventType(String eventType) {
+        this.eventType = eventType;
     }
 
     public String getSummary() {
         return summary;
     }
 
+    public void setSummary(String summary) {
+        this.summary = summary;
+    }
+
     public String getEventId() {
         return eventId;
     }
 
+    public void setEventId(String eventId) {
+        this.eventId = eventId;
+    }
+
     public static RachioEvent fromJson(String json) {
         try {
-            ObjectMapper mapper = new ObjectMapper();
-            return mapper.readValue(json, RachioEvent.class);
+            Gson gson = new Gson();
+            return gson.fromJson(json, RachioEvent.class);
         } catch (Exception e) {
             throw new RuntimeException("Failed to parse RachioEvent from JSON", e);
         }
