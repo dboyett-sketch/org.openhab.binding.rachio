@@ -5,6 +5,7 @@ import static org.openhab.binding.rachio.RachioBindingConstants.*;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.openhab.core.thing.ThingHandler;
 import org.openhab.core.library.types.OnOffType;
 import org.openhab.core.thing.ThingUID;
 import org.openhab.binding.rachio.internal.handler.RachioZoneHandler;
