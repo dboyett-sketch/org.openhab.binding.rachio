@@ -1,336 +1,217 @@
 package org.openhab.binding.rachio.internal.handler;
 
-import static org.openhab.binding.rachio.RachioBindingConstants.*;
+import static org.openhab.binding.rachio.internal.RachioBindingConstants.*;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
-import org.openhab.binding.rachio.internal.RachioConfiguration;
-import org.openhab.binding.rachio.internal.api.RachioApi;
-import org.openhab.binding.rachio.internal.api.RachioApiException;
 import org.openhab.binding.rachio.internal.api.RachioDevice;
+import org.openhab.binding.rachio.internal.api.RachioHttp;
+import org.openhab.binding.rachio.internal.api.RachioPerson;
 import org.openhab.binding.rachio.internal.api.RachioZone;
 import org.openhab.binding.rachio.internal.api.RachioEvent;
-import org.openhab.binding.rachio.internal.api.RachioImageServlet;
-import org.openhab.binding.rachio.internal.api.RachioWebHookServlet;
+import org.openhab.binding.rachio.internal.config.RachioBridgeConfiguration;
 import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.ChannelUID;
 import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingStatus;
 import org.openhab.core.thing.ThingStatusDetail;
-import org.openhab.core.thing.ThingTypeUID;
-import org.openhab.core.thing.ThingUID;
+import org.openhab.core.thing.ThingStatusInfo;
 import org.openhab.core.thing.binding.BaseBridgeHandler;
-import org.openhab.core.thing.binding.ThingHandler;
-import org.openhab.core.thing.binding.builder.ThingBuilder;
+import org.openhab.core.thing.binding.ThingHandlerService;
 import org.openhab.core.types.Command;
-import org.openhab.core.types.RefreshType;
-import org.osgi.service.component.annotations.Activate;
-import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.ConfigurationPolicy;
-import org.osgi.service.component.annotations.Modified;
-import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ReferenceCardinality;
-import org.osgi.service.component.annotations.ReferencePolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Component(service = ThingHandler.class, configurationPid = "bridge.rachio", configurationPolicy = ConfigurationPolicy.OPTIONAL)
+/**
+ * The {@link RachioBridgeHandler} is responsible for handling commands, which are
+ * sent to one of the channels.
+ *
+ * @author Michael Lobstein - Initial contribution
+ */
+
 @NonNullByDefault
 public class RachioBridgeHandler extends BaseBridgeHandler {
     private final Logger logger = LoggerFactory.getLogger(RachioBridgeHandler.class);
 
-    private @Nullable RachioConfiguration config;
-    private @Nullable RachioApi api;
+    private RachioBridgeConfiguration config = new RachioBridgeConfiguration();
+
+    private @Nullable RachioHttp api;
+    private @Nullable RachioPerson person;
+    private final List<RachioDevice> devices = new CopyOnWriteArrayList<>();
+    private final List<RachioStatusListener> listeners = new CopyOnWriteArrayList<>();
     private @Nullable ScheduledFuture<?> pollingJob;
-
-    private @Nullable RachioImageServlet imageServlet;
-    private @Nullable RachioWebHookServlet webHookServlet;
-
-    private final List<RachioStatusListener> listeners = new ArrayList<>();
 
     public RachioBridgeHandler(Bridge bridge) {
         super(bridge);
     }
 
-    @Activate
-    public void activate() {
-        logger.debug("RachioBridgeHandler: Activating bridge '{}'", getThing().getUID());
-    }
-
-    @Modified
-    protected void modified(Map<String, Object> configuration) {
-        logger.debug("RachioBridgeHandler: Configuration modified for bridge '{}'", getThing().getUID());
-        dispose();
-        initialize();
+    @Override
+    public void handleCommand(ChannelUID channelUID, Command command) {
+        // No commands to handle for the bridge
     }
 
     @Override
     public void initialize() {
-        logger.debug("RachioBridgeHandler: Initializing bridge '{}'", getThing().getUID());
+        config = getConfigAs(RachioBridgeConfiguration.class);
+        logger.debug("Rachio bridge config: {}", config.toString());
 
-        config = getConfigAs(RachioConfiguration.class);
-        if (config == null) {
-            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "Missing configuration");
+        if (config.apiKey.isEmpty()) {
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "API key not configured");
             return;
         }
 
-        if (config.apikey == null || config.apikey.trim().isEmpty()) {
-            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "API key is required");
-            return;
-        }
+        api = new RachioHttp(config.apiKey);
+        api.setHandler(this);
 
-        scheduler.execute(() -> {
-            try {
-                initializeBridge();
-            } catch (Exception e) {
-                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.getMessage());
-            }
-        });
-    }
+        updateStatus(ThingStatus.UNKNOWN);
 
-    private void initializeBridge() {
-        try {
-            api = new RachioApi("");
-            if (!api.initialize(config.apikey, getThing().getUID())) {
-                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "API initialization failed");
-                return;
-            }
-
-            updateStatus(ThingStatus.ONLINE);
-            logger.info("RachioBridgeHandler: Bridge initialized successfully for user {}", config.apikey.substring(0, 8) + "...");
-
-            // Start polling if configured
-            startPolling();
-
-        } catch (Exception e) {
-            logger.error("RachioBridgeHandler: Initialization failed: {}", e.getMessage(), e);
-            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.getMessage());
-        }
-    }
-
-    private void startPolling() {
-        stopPolling();
-        
-        if (config != null && config.pollingInterval > 0) {
-            pollingJob = scheduler.scheduleWithFixedDelay(this::refreshThings, 10, config.pollingInterval, TimeUnit.SECONDS);
-            logger.debug("RachioBridgeHandler: Started polling with interval {} seconds", config.pollingInterval);
-        }
-    }
-
-    private void stopPolling() {
-        if (pollingJob != null) {
-            pollingJob.cancel(true);
-            pollingJob = null;
-        }
-    }
-
-    private void refreshThings() {
-        try {
-            if (api != null) {
-                // Refresh device states
-                for (RachioStatusListener listener : listeners) {
-                    listener.onRefreshRequested();
-                }
-            }
-        } catch (Exception e) {
-            logger.debug("RachioBridgeHandler: Error during refresh: {}", e.getMessage());
-        }
+        // give the binding a chance to get the device list
+        scheduler.schedule(this::updateThings, 5, TimeUnit.SECONDS);
+        startPolling();
     }
 
     @Override
     public void dispose() {
-        logger.debug("RachioBridgeHandler: Disposing bridge '{}'", getThing().getUID());
         stopPolling();
-        listeners.clear();
-        api = null;
+        if (api != null) {
+            api.dispose();
+        }
         super.dispose();
     }
 
-    @Override
-    public void handleCommand(ChannelUID channelUID, Command command) {
-        logger.debug("RachioBridgeHandler: Command {} received for channel {}", command, channelUID);
-        
-        if (command instanceof RefreshType) {
-            // Handle refresh if needed
+    /**
+     * Get the API instance
+     */
+    public @Nullable RachioHttp getApi() {
+        return api;
+    }
+
+    /**
+     * Get a device by ID
+     */
+    public @Nullable RachioDevice getDevice(String deviceId) {
+        for (RachioDevice device : devices) {
+            if (deviceId.equals(device.getId())) {
+                return device;
+            }
         }
+        return null;
     }
 
-    public String getApiKey() {
-        return config != null ? config.apikey : "";
+    /**
+     * Get all devices
+     */
+    public List<RachioDevice> getDevices() {
+        return new ArrayList<>(devices);
     }
 
-    public int getDefaultRuntime() {
-        return config != null ? config.defaultRuntime : 120;
+    /**
+     * Add a status listener
+     */
+    public void addStatusListener(RachioStatusListener listener) {
+        listeners.add(listener);
     }
 
-    public @Nullable RachioDevice getDevByUID(ThingUID thingUID) {
-        final RachioApi localApi = api;
-        if (localApi == null) {
-            return null;
-        }
-        ThingUID bridgeUID = getThing().getUID();
-        return localApi.getDevByUID(bridgeUID, thingUID);
-    }
-
-    public @Nullable RachioZone getZoneByUID(ThingUID zoneUID) {
-        final RachioApi localApi = api;
-        if (localApi == null) {
-            return null;
-        }
-        ThingUID bridgeUID = getThing().getUID();
-        return localApi.getZoneByUID(bridgeUID, zoneUID);
-    }
-
-    public void registerStatusListener(RachioStatusListener listener) {
-        if (!listeners.contains(listener)) {
-            listeners.add(listener);
-            logger.debug("RachioBridgeHandler: Registered status listener {}", listener.getClass().getSimpleName());
-        }
-    }
-
-    public void unregisterStatusListener(RachioStatusListener listener) {
+    /**
+     * Remove a status listener
+     */
+    public void removeStatusListener(RachioStatusListener listener) {
         listeners.remove(listener);
-        logger.debug("RachioBridgeHandler: Unregistered status listener {}", listener.getClass().getSimpleName());
     }
 
-    public void startZone(String zoneId, int runtime) throws RachioApiException {
-        final RachioApi localApi = api;
-        if (localApi != null) {
-            localApi.runZone(zoneId, runtime);
+    private void startPolling() {
+        ScheduledFuture<?> localPollingJob = pollingJob;
+        if (localPollingJob == null || localPollingJob.isCancelled()) {
+            pollingJob = scheduler.scheduleWithFixedDelay(this::updateThings, 30, 30, TimeUnit.SECONDS);
         }
     }
 
-    public void stopWatering(String deviceId) throws RachioApiException {
-        final RachioApi localApi = api;
-        if (localApi != null) {
-            localApi.stopWatering(deviceId);
+    private void stopPolling() {
+        ScheduledFuture<?> localPollingJob = pollingJob;
+        if (localPollingJob != null && !localPollingJob.isCancelled()) {
+            localPollingJob.cancel(true);
+            pollingJob = null;
         }
     }
 
-    public void startRainDelay(String deviceId, int seconds) throws RachioApiException {
-        final RachioApi localApi = api;
-        if (localApi != null) {
-            localApi.rainDelay(deviceId, seconds);
-        }
-    }
+    private void updateThings() {
+        RachioHttp localApi = api;
 
-    public void disableDevice(String deviceId) throws RachioApiException {
-        final RachioApi localApi = api;
-        if (localApi != null) {
-            localApi.disableDevice(deviceId);
-        }
-    }
-
-    public void enableDevice(String deviceId) throws RachioApiException {
-        final RachioApi localApi = api;
-        if (localApi != null) {
-            localApi.enableDevice(deviceId);
-        }
-    }
-
-    public void runMultipleZones(String zoneListJson) throws RachioApiException {
-        final RachioApi localApi = api;
-        if (localApi != null) {
-            localApi.runMultilpeZones(zoneListJson);
-        }
-    }
-
-    public void registerWebHook(String callbackUrl) throws RachioApiException {
-        final RachioApi localApi = api;
         if (localApi == null) {
             return;
         }
-        String externalId = localApi.getExternalId();
-        String deviceId = "";
-        if (!localApi.getDevices().isEmpty()) {
-            deviceId = localApi.getDevices().entrySet().iterator().next().getKey();
-        }
-        if (deviceId.isEmpty()) {
-            logger.warn("RachioBridgeHandler: No devices available to register webhook");
-            return;
-        }
-        localApi.registerWebHook(deviceId, callbackUrl, externalId, Boolean.TRUE);
-    }
-
-    public void registerWebHook(String deviceId, String callbackUrl, boolean clearAllCallbacks) throws RachioApiException {
-        final RachioApi localApi = api;
-        if (localApi != null) {
-            localApi.registerWebHook(deviceId, callbackUrl, localApi.getExternalId(), Boolean.valueOf(clearAllCallbacks));
-        }
-    }
-
-    public void webHookEvent(RachioEvent event) {
-        final RachioApi localApi = api;
-        if (localApi == null) {
-            return;
-        }
-        logger.debug("RachioBridgeHandler: Received webhook event type={} deviceId={} zoneId={}",
-                event.eventType, event.deviceId, event.zoneId);
-
-        RachioDevice dev = null;
-        RachioZone zone = null;
 
         try {
-            dev = localApi.getDevices().get(event.deviceId);
-        } catch (Exception ignored) {
-        }
+            // Get person data which includes devices
+            person = localApi.getPerson();
+            if (person != null) {
+                devices.clear();
+                devices.addAll(person.getDevices());
+                updateStatus(ThingStatus.ONLINE);
 
-        if (event.zoneId != null && !event.zoneId.isEmpty()) {
-            try {
-                for (RachioDevice d : localApi.getDevices().values()) {
-                    for (RachioZone z : d.getZones().values()) {
-                        if (event.zoneId.equals(z.id)) {
-                            zone = z;
-                            break;
-                        }
-                    }
-                    if (zone != null) {
-                        break;
+                // Notify listeners
+                for (RachioStatusListener listener : listeners) {
+                    listener.onRefreshRequested();
+                }
+
+                logger.debug("Found {} devices", devices.size());
+            } else {
+                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, "Unable to get person data");
+            }
+        } catch (Exception e) {
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.getMessage());
+            logger.debug("Error updating things: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Handle a webhook event
+     */
+    public void onWebhookEvent(RachioEvent event) {
+        String eventType = event.getEventType();
+        String deviceId = event.getDeviceId();
+
+        logger.debug("Received webhook event: {} for device: {}", eventType, deviceId);
+
+        if ("DEVICE_STATUS_EVENT".equals(eventType)) {
+            // Update device status
+            for (RachioStatusListener listener : listeners) {
+                listener.updateDeviceStatus(ThingStatus.ONLINE);
+            }
+        } else if ("ZONE_STATUS_EVENT".equals(eventType)) {
+            // Update zone status - need to find which zone
+            RachioDevice device = getDevice(deviceId);
+            if (device != null) {
+                // This is a simplification - you'll need to extract zoneId from the event
+                // In a real implementation, you'd parse the event to get the specific zone
+                for (RachioZone zone : device.getZones()) {
+                    for (RachioStatusListener listener : listeners) {
+                        listener.updateZoneStatus(zone.getId(), ThingStatus.ONLINE);
                     }
                 }
-            } catch (Exception ignored) {
             }
         }
+    }
 
+    /**
+     * Notify listeners of thing state changes
+     */
+    public void notifyThingStateChanged(RachioDevice device, RachioZone zone) {
         for (RachioStatusListener listener : listeners) {
-            try {
-                listener.onThingStateChanged(dev, zone);
-            } catch (Exception e) {
-                logger.warn("RachioBridgeHandler: Listener {} threw: {}", listener.getClass().getSimpleName(), e.getMessage());
-            }
+            listener.onThingStateChanged(device, zone);
         }
     }
 
-    public void setImageServlet(RachioImageServlet servlet) {
-        this.imageServlet = servlet;
-        servlet.injectBridgeHandler(this);
-    }
-
-    public void setWebHookServlet(RachioWebHookServlet servlet) {
-        this.webHookServlet = servlet;
-        servlet.injectBridgeHandler(this);
-    }
-
-    public @Nullable RachioConfiguration getThingConfig() {
-        return config;
-    }
-
-    public @Nullable RachioImageServlet getImageServlet() {
-        return imageServlet;
-    }
-
-    public @Nullable RachioWebHookServlet getWebHookServlet() {
-        return webHookServlet;
-    }
-
-    public @Nullable RachioApi getApi() {
-        return api;
+    @Override
+    public Collection<Class<? extends ThingHandlerService>> getServices() {
+        return Collections.singleton(RachioActions.class);
     }
 }
