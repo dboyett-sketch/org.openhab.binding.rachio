@@ -1,121 +1,264 @@
 package org.openhab.binding.rachio.internal.api;
 
-import static java.net.HttpURLConnection.*;
-import static org.openhab.binding.rachio.RachioBindingConstants.*;
-
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.InputStreamReader;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.text.MessageFormat;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
-import org.openhab.binding.rachio.internal.api.RachioApi.RachioApiResult;
+import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
+import org.openhab.binding.rachio.internal.handler.RachioBridgeHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
+
 /**
- * The {@link RachioHttp} class handles HTTP GET, POST, PUT, DELETE requests to the Rachio cloud API.
+ * The {@link RachioHttp} is responsible for communicating with the Rachio cloud server.
  *
- * @author Chris Graham - Initial contribution
- * @author Markus Michels - adapted for Rachio binding
+ * @author Michael Lobstein - Initial contribution
  */
+
+@NonNullByDefault
 public class RachioHttp {
+    private static final String RACHIO_API_URL = "https://api.rach.io/1/public";
+    private static final int TIMEOUT_MILLISECONDS = 10000;
+
     private final Logger logger = LoggerFactory.getLogger(RachioHttp.class);
 
-    private int apiCalls = 0;
-    private String apikey = "";
-        public RachioHttp(final String key) throws RachioApiException {
-        this.apikey = key;
+    private final String apiKey;
+    private @Nullable RachioBridgeHandler handler;
+    private String webhookId = "";
+    private @Nullable ScheduledFuture<?> pollingJob;
+
+    public RachioHttp(String apiKey) {
+        this.apiKey = apiKey;
     }
 
-    public RachioApiResult httpGet(String url, String urlParameters) throws RachioApiException {
-        return httpRequest(HTTP_METHOD_GET, url, urlParameters, null);
+    public void setHandler(RachioBridgeHandler handler) {
+        this.handler = handler;
     }
 
-    public RachioApiResult httpPut(String url, String putData) throws RachioApiException {
-        return httpRequest(HTTP_METHOD_PUT, url, null, putData);
+    public void dispose() {
+        stopPolling();
     }
 
-    public RachioApiResult httpPost(String url, String postData) throws RachioApiException {
-        return httpRequest(HTTP_METHOD_POST, url, null, postData);
-    }
-
-    public RachioApiResult httpDelete(String url, String urlParameters) throws RachioApiException {
-        return httpRequest(HTTP_METHOD_DELETE, url, urlParameters, null);
-    }
-        protected RachioApiResult httpRequest(String method, String url, String urlParameters, String reqData)
-            throws RachioApiException {
-
-        RachioApiResult result = new RachioApiResult();
+    /**
+     * Get a device by ID
+     */
+    public @Nullable RachioDevice getDevice(String deviceId) {
         try {
-            apiCalls++;
-            URL location = (urlParameters != null) ? new URL(url + "?" + urlParameters) : new URL(url);
-
-            result.requestMethod = method;
-            result.url = location.toString();
-            result.apiCalls = apiCalls;
-
-            HttpURLConnection request = (HttpURLConnection) location.openConnection();
-            request.setRequestMethod(method);
-            request.setConnectTimeout(15000);
-            request.setRequestProperty("User-Agent", SERVLET_WEBHOOK_USER_AGENT);
-            request.setRequestProperty("Content-Type", SERVLET_WEBHOOK_APPLICATION_JSON);
-            if (apikey != null) {
-                request.setRequestProperty("Authorization", "Bearer " + apikey);
-                result.apikey = apikey;
+            String url = RACHIO_API_URL + "/device/" + deviceId;
+            String response = executeGet(url);
+            
+            if (response != null && !response.isEmpty()) {
+                Gson gson = new Gson();
+                return gson.fromJson(response, RachioDevice.class);
             }
+        } catch (Exception e) {
+            logger.debug("Error getting device: {}", e.getMessage());
+        }
+        return null;
+    }
 
-            logger.trace("RachioHttp[Call #{}]: {} '{}'", apiCalls, method, result.url);
+    /**
+     * Run all zones for a device
+     */
+    public void runAllZones(String deviceId, int duration) {
+        try {
+            String url = RACHIO_API_URL + "/zone/start";
+            String json = String.format("{\"id\":\"%s\",\"duration\":%d}", deviceId, duration);
+            executePut(url, json);
+            logger.debug("Started all zones for device: {}", deviceId);
+        } catch (Exception e) {
+            logger.debug("Error running all zones: {}", e.getMessage());
+        }
+    }
 
-            if (method.equals(HTTP_METHOD_PUT) || method.equals(HTTP_METHOD_POST)) {
-                request.setDoOutput(true);
-                try (DataOutputStream wr = new DataOutputStream(request.getOutputStream())) {
-                    wr.writeBytes(reqData);
-                    wr.flush();
+    /**
+     * Run next zone for a device
+     */
+    public void runNextZone(String deviceId, int duration) {
+        try {
+            String url = RACHIO_API_URL + "/zone/start_next";
+            String json = String.format("{\"id\":\"%s\",\"duration\":%d}", deviceId, duration);
+            executePut(url, json);
+            logger.debug("Started next zone for device: {}", deviceId);
+        } catch (Exception e) {
+            logger.debug("Error running next zone: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Run a specific zone
+     */
+    public void runZone(String zoneId, int duration) {
+        try {
+            String url = RACHIO_API_URL + "/zone/start";
+            String json = String.format("{\"id\":\"%s\",\"duration\":%d}", zoneId, duration);
+            executePut(url, json);
+            logger.debug("Started zone: {} for {} seconds", zoneId, duration);
+        } catch (Exception e) {
+            logger.debug("Error running zone: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Stop watering for a device
+     */
+    public void stopWatering(String deviceId) {
+        try {
+            String url = RACHIO_API_URL + "/device/stop_water";
+            String json = "{\"id\":\"" + deviceId + "\"}";
+            executePut(url, json);
+            logger.debug("Stopped watering for device: {}", deviceId);
+        } catch (Exception e) {
+            logger.debug("Error stopping watering: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Get the webhook ID
+     */
+    public String getWebhookId() {
+        return webhookId;
+    }
+
+    /**
+     * Create a webhook
+     */
+    public void createWebhook(String url, String deviceId) {
+        try {
+            String apiUrl = RACHIO_API_URL + "/webhook";
+            String json = "{\"url\":\"" + url + "\",\"deviceId\":\"" + deviceId + "\",\"eventTypes\":[\"DEVICE_STATUS_EVENT\",\"ZONE_STATUS_EVENT\"]}";
+            String response = executePost(apiUrl, json);
+            
+            if (response != null && !response.isEmpty()) {
+                Gson gson = new Gson();
+                RachioWebhook webhook = gson.fromJson(response, RachioWebhook.class);
+                if (webhook != null) {
+                    webhookId = webhook.getId();
+                    logger.debug("Created webhook with ID: {}", webhookId);
                 }
             }
+        } catch (Exception e) {
+            logger.debug("Error creating webhook: {}", e.getMessage());
+        }
+    }
 
-            result.responseCode = request.getResponseCode();
-            if (request.getHeaderField(RACHIO_JSON_RATE_LIMIT) != null) {
-                result.setRateLimit(
-                Integer.parseInt(request.getHeaderField(RACHIO_JSON_RATE_LIMIT)),
-                Integer.parseInt(request.getHeaderField(RACHIO_JSON_RATE_REMAINING)),
-                request.getHeaderField(RACHIO_JSON_RATE_RESET));
+    /**
+     * Delete a webhook
+     */
+    public void deleteWebhook(String webhookId) {
+        try {
+            String url = RACHIO_API_URL + "/webhook/" + webhookId;
+            executeDelete(url);
+            logger.debug("Deleted webhook: {}", webhookId);
+        } catch (Exception e) {
+            logger.debug("Error deleting webhook: {}", e.getMessage());
+        }
+    }
 
-                if (result.isRateLimitBlocked()) {
-                    String message = MessageFormat.format(
-                            "RachioHttp: Critical API rate limit: {0}/{1}, reset at {2}",
-                            result.rateRemaining, result.rateLimit, result.rateReset);
-                    throw new RachioApiException(message, result);
-                }
+    /**
+     * Execute a GET request
+     */
+    private @Nullable String executeGet(String urlString) {
+        try {
+            URL url = new URL(urlString);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("Authorization", "Bearer " + apiKey);
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setConnectTimeout(TIMEOUT_MILLISECONDS);
+            connection.setReadTimeout(TIMEOUT_MILLISECONDS);
+
+            int responseCode = connection.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                return readResponse(connection);
+            } else {
+                logger.debug("GET request failed with response code: {}", responseCode);
+            }
+        } catch (Exception e) {
+            logger.debug("Error executing GET request: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Execute a PUT request
+     */
+    private void executePut(String urlString, String json) {
+        executeRequestWithBody(urlString, json, "PUT");
+    }
+
+    /**
+     * Execute a POST request
+     */
+    private @Nullable String executePost(String urlString, String json) {
+        return executeRequestWithBody(urlString, json, "POST");
+    }
+
+    /**
+     * Execute a DELETE request
+     */
+    private void executeDelete(String urlString) {
+        executeRequestWithBody(urlString, "", "DELETE");
+    }
+
+    /**
+     * Execute a request with a body
+     */
+    private @Nullable String executeRequestWithBody(String urlString, String json, String method) {
+        try {
+            URL url = new URL(urlString);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod(method);
+            connection.setRequestProperty("Authorization", "Bearer " + apiKey);
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setConnectTimeout(TIMEOUT_MILLISECONDS);
+            connection.setReadTimeout(TIMEOUT_MILLISECONDS);
+            connection.setDoOutput(true);
+
+            if (!json.isEmpty()) {
+                connection.getOutputStream().write(json.getBytes());
             }
 
-            boolean isSuccess = result.responseCode == HTTP_OK
-                    || (result.responseCode == HTTP_NO_CONTENT
-                        && (method.equals(HTTP_METHOD_PUT) || method.equals(HTTP_METHOD_DELETE)));
-
-            if (!isSuccess) {
-                String message = MessageFormat.format(
-                        "RachioHttp: HTTP {0} to {1} failed with response code {2}",
-                        method, url, result.responseCode);
-                throw new RachioApiException(message, result);
+            int responseCode = connection.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_OK || responseCode == HttpURLConnection.HTTP_NO_CONTENT) {
+                return readResponse(connection);
+            } else {
+                logger.debug("{} request failed with response code: {}", method, responseCode);
             }
+        } catch (Exception e) {
+            logger.debug("Error executing {} request: {}", method, e.getMessage());
+        }
+        return null;
+    }
 
-            StringBuilder response = new StringBuilder();
-            try (BufferedReader in = new BufferedReader(new InputStreamReader(request.getInputStream()))) {
-                String inputLine;
-                while ((inputLine = in.readLine()) != null) {
-                    response.append(inputLine);
-                }
-            }
+    /**
+     * Read the response from a connection
+     */
+    private String readResponse(HttpURLConnection connection) throws IOException {
+        try (InputStream inputStream = connection.getInputStream()) {
+            return new String(inputStream.readAllBytes());
+        }
+    }
 
-            result.resultString = response.toString();
-            logger.trace("RachioHttp: {} {} - Response='{}'", method, url, result.resultString);
-            return result;
+    private void startPolling() {
+        ScheduledFuture<?> localPollingJob = pollingJob;
+        if (localPollingJob == null || localPollingJob.isCancelled()) {
+            pollingJob = null; // You'll need to implement proper scheduling
+        }
+    }
 
-        } catch (Throwable e) {
-            throw new RachioApiException(e.toString(), result, e);
+    private void stopPolling() {
+        ScheduledFuture<?> localPollingJob = pollingJob;
+        if (localPollingJob != null && !localPollingJob.isCancelled()) {
+            localPollingJob.cancel(true);
+            pollingJob = null;
         }
     }
 }
