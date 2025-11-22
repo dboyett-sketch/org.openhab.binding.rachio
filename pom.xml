@@ -200,9 +200,7 @@
                             *
                         </Import-Package>
                         <Export-Package>
-                            org.openhab.binding.rachio,
-                            org.openhab.binding.rachio.handler,
-                            org.openhab.binding.rachio.internal
+                            org.openhab.binding.rachio.*;version="${project.version}"
                         </Export-Package>
                     </instructions>
                 </configuration>
