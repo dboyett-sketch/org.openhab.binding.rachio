@@ -6,7 +6,7 @@
 
     <groupId>org.openhab.addons.bundles</groupId>
     <artifactId>org.openhab.binding.rachio</artifactId>
-    <version>5.0.0</version>
+    <version>4.1.0</version>
     <packaging>bundle</packaging>
 
     <name>openHAB Add-ons :: Bundles :: Rachio Binding</name>
@@ -15,20 +15,14 @@
 
     <repositories>
         <repository>
-            <id>openhab-releases</id>
+            <id>openhab</id>
             <url>https://openhab.jfrog.io/artifactory/libs-release</url>
         </repository>
-        <!-- Uncomment for snapshots:
-        <repository>
-            <id>openhab-snapshots</id>
-            <url>https://openhab.jfrog.io/artifactory/libs-snapshot</url>
-        </repository>
-        -->
     </repositories>
 
     <pluginRepositories>
         <pluginRepository>
-            <id>openhab-releases</id>
+            <id>openhab</id>
             <url>https://openhab.jfrog.io/artifactory/libs-release</url>
         </pluginRepository>
         <pluginRepository>
@@ -39,35 +33,35 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
         <bundle.category>openhab-addons</bundle.category>
     </properties>
 
     <dependencies>
-        <!-- openHAB Core APIs - OH5 versions -->
+        <!-- openHAB Core APIs - Using 4.1.0 which is available -->
         <dependency>
             <groupId>org.openhab.core.bundles</groupId>
             <artifactId>org.openhab.core.config.core</artifactId>
-            <version>5.0.0</version>
+            <version>4.1.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.openhab.core.bundles</groupId>
             <artifactId>org.openhab.core.config.discovery</artifactId>
-            <version>5.0.0</version>
+            <version>4.1.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.openhab.core.bundles</groupId>
             <artifactId>org.openhab.core.thing</artifactId>
-            <version>5.0.0</version>
+            <version>4.1.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.openhab.core.bundles</groupId>
             <artifactId>org.openhab.core.i18n</artifactId>
-            <version>5.0.0</version>
+            <version>4.1.0</version>
             <scope>provided</scope>
         </dependency>
 
@@ -75,7 +69,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>2.0.9</version>
+            <version>1.7.36</version>
             <scope>provided</scope>
         </dependency>
 
@@ -164,35 +158,34 @@
                         <Service-Component>*</Service-Component>
                         <Meta-Persistence>OSGI-INF/binding/binding.xml</Meta-Persistence>
                         <Import-Package>
-                            org.openhab.core.*;version="[5.0,6)",
+                            org.openhab.core.*;version="[4.1,5)",
                             org.osgi.framework,
                             org.osgi.service.*,
                             org.osgi.util.tracker,
                             org.osgi.service.component.annotations;version="[1.5,2)",
-                            org.slf4j;version="[2.0,3)",
+                            org.slf4j,
                             com.google.gson,
                             org.apache.hc.client5.http.*,
                             org.apache.hc.core5.http.*,
                             *
                         </Import-Package>
                         <Export-Package>
-                            org.openhab.binding.rachio;version="${project.version}"
+                            org.openhab.binding.rachio,
+                            org.openhab.binding.rachio.handler,
+                            org.openhab.binding.rachio.internal
                         </Export-Package>
-                        <Private-Package>
-                            org.openhab.binding.rachio.internal.*
-                        </Private-Package>
                     </instructions>
                 </configuration>
             </plugin>
             
-            <!-- Compiler Plugin - Java 17 for OH5 -->
+            <!-- Compiler Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.11.0</version>
                 <configuration>
-                    <source>17</source>
-                    <target>17</target>
+                    <source>11</source>
+                    <target>11</target>
                     <encoding>UTF-8</encoding>
                 </configuration>
             </plugin>
