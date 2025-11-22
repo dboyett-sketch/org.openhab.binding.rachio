@@ -58,7 +58,37 @@
             <version>4.1.0</version>
             <scope>provided</scope>
         </dependency>
-        <!-- Removed i18n dependency since it's not available -->
+
+        <!-- Eclipse Annotations (NonNullByDefault, Nullable) -->
+        <dependency>
+            <groupId>org.eclipse.jdt</groupId>
+            <artifactId>org.eclipse.jdt.annotation</artifactId>
+            <version>2.2.600</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Servlet API -->
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <version>4.0.1</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- OSGi HTTP Service -->
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.service.http</artifactId>
+            <version>1.2.1</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Apache Commons Net -->
+        <dependency>
+            <groupId>commons-net</groupId>
+            <artifactId>commons-net</artifactId>
+            <version>3.9.0</version>
+        </dependency>
 
         <!-- Logging -->
         <dependency>
@@ -158,8 +188,13 @@
                             org.osgi.service.*,
                             org.osgi.util.tracker,
                             org.osgi.service.component.annotations;version="[1.5,2)",
+                            org.osgi.service.http;version="[1.2,2)",
+                            org.eclipse.jdt.annotation;version="[2.2,3)",
+                            javax.servlet;version="[4.0,5)",
+                            javax.servlet.http;version="[4.0,5)",
                             org.slf4j,
                             com.google.gson,
+                            org.apache.commons.net.util;version="[3.9,4)",
                             org.apache.hc.client5.http.*,
                             org.apache.hc.core5.http.*,
                             *
