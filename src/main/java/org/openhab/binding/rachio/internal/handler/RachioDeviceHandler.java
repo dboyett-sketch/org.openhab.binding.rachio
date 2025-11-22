@@ -2,7 +2,7 @@ package org.openhab.binding.rachio.internal.handler;
 
 import java.util.HashMap;
 import java.util.Map;
-
+import org.openhab.core.thing.ThingHandler;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.core.library.types.DecimalType;
