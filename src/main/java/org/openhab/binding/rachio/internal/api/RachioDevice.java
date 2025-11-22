@@ -22,7 +22,7 @@ import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingStatus;
 import org.openhab.core.thing.ThingUID;
 import org.openhab.binding.rachio.RachioBindingConstants;
-import org.openhab.binding.rachio.handler.RachioDeviceHandler;
+import org.openhab.binding.rachio.internal.handler.RachioDeviceHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
