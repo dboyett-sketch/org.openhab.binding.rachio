@@ -7,7 +7,7 @@ import java.util.Map;
 
 import org.openhab.core.library.types.OnOffType;
 import org.openhab.core.thing.ThingUID;
-import org.openhab.binding.rachio.handler.RachioZoneHandler;
+import org.openhab.binding.rachio.internal.handler.RachioZoneHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
