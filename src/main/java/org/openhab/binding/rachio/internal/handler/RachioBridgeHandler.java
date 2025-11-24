@@ -120,6 +120,11 @@ public class RachioBridgeHandler extends BaseBridgeHandler {
         }
     }
 
+    public void webHookEvent(org.openhab.binding.rachio.internal.api.RachioEvent event) {
+        logger.debug("Received webhook event: {}", event.getType());
+        // Handle webhook events here - you can update device/zone status based on events
+    }
+
     @Override
     public void dispose() {
         ScheduledFuture<?> job = refreshJob;
