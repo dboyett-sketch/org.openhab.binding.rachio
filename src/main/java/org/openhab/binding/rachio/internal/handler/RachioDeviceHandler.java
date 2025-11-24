@@ -113,16 +113,16 @@ public class RachioDeviceHandler extends BaseThingHandler {
 
         try {
             switch (channelUID.getId()) {
-                case START_ALL_ZONES:
+                case CHANNEL_START_ALL_ZONES:
                     api.runAllZones(localDeviceId, DEFAULT_DURATION);
                     break;
-                case START_NEXT_ZONE:
+                case CHANNEL_START_NEXT_ZONE:
                     api.runNextZone(localDeviceId, DEFAULT_DURATION);
                     break;
-                case STOP_WATERING:
+                case CHANNEL_STOP_WATERING:
                     api.stopWatering(localDeviceId);
                     break;
-                case RAIN_DELAY:
+                case CHANNEL_RAIN_DELAY:
                     if (command instanceof DecimalType) {
                         int duration = ((DecimalType) command).intValue();
                         api.rainDelay(localDeviceId, duration);
