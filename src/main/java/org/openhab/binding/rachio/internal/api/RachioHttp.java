@@ -89,7 +89,7 @@ public class RachioHttp {
         return "";
     }
 
-    // ADD THESE MISSING METHODS:
+    // ADDED: Missing HTTP methods
     public String httpGet(String url, String contentType) {
         return httpRequest("GET", url, null, contentType);
     }
@@ -106,11 +106,92 @@ public class RachioHttp {
         return httpRequest("DELETE", url, null, contentType);
     }
 
+    // ADDED: Missing getPerson method
     public RachioPerson getPerson() {
         String response = httpGet(API_URL + "/person/info", "application/json");
         return gson.fromJson(response, RachioPerson.class);
     }
 
-    // Existing methods remain unchanged below...
-    // [Keep all your existing methods like getDevice, getZone, etc.]
+    public RachioDevice getDevice(String deviceId) {
+        String response = httpGet(API_URL + "/device/" + deviceId, "application/json");
+        return gson.fromJson(response, RachioDevice.class);
+    }
+
+    public RachioZone getZone(String zoneId) {
+        String response = httpGet(API_URL + "/zone/" + zoneId, "application/json");
+        return gson.fromJson(response, RachioZone.class);
+    }
+
+    public String startZone(String zoneId, int duration) {
+        String jsonData = "{\"id\":\"" + zoneId + "\",\"duration\":" + duration + "}";
+        return httpPut(API_URL + "/zone/start", jsonData);
+    }
+
+    public String stopWatering(String deviceId) {
+        String jsonData = "{\"id\":\"" + deviceId + "\"}";
+        return httpPut(API_URL + "/device/stop_water", jsonData);
+    }
+
+    public String rainDelay(String deviceId, int duration) {
+        String jsonData = "{\"id\":\"" + deviceId + "\",\"duration\":" + duration + "}";
+        return httpPut(API_URL + "/device/rain_delay", jsonData);
+    }
+
+    public String createWebhook(String url, String externalId) {
+        String jsonData = "{\"url\":\"" + url + "\",\"externalId\":\"" + externalId + "\",\"eventTypes\":[\"DEVICE_STATUS_EVENT\",\"ZONE_STATUS_EVENT\",\"SCHEDULE_STATUS_EVENT\"]}";
+        return httpPost(API_URL + "/webhook", jsonData);
+    }
+
+    public String deleteWebhook(String webhookId) {
+        return httpDelete(API_URL + "/webhook/" + webhookId, "application/json");
+    }
+
+    public RachioWebhook getWebhook(String webhookId) {
+        String response = httpGet(API_URL + "/webhook/" + webhookId, "application/json");
+        return gson.fromJson(response, RachioWebhook.class);
+    }
+
+    public String getDeviceState(String deviceId) {
+        return httpGet(API_URL + "/device/" + deviceId + "/state", "application/json");
+    }
+
+    public String getDeviceSchedule(String deviceId) {
+        return httpGet(API_URL + "/device/" + deviceId + "/schedule", "application/json");
+    }
+
+    public String getDeviceForecast(String deviceId) {
+        return httpGet(API_URL + "/device/" + deviceId + "/forecast", "application/json");
+    }
+
+    public String getZoneSchedule(String zoneId) {
+        return httpGet(API_URL + "/zone/" + zoneId + "/schedule", "application/json");
+    }
+
+    public String getZoneForecast(String zoneId) {
+        return httpGet(API_URL + "/zone/" + zoneId + "/forecast", "application/json");
+    }
+
+    public String setZoneSchedule(String zoneId, String scheduleJson) {
+        return httpPut(API_URL + "/zone/" + zoneId + "/schedule", scheduleJson);
+    }
+
+    public String setZoneForecast(String zoneId, String forecastJson) {
+        return httpPut(API_URL + "/zone/" + zoneId + "/forecast", forecastJson);
+    }
+
+    public String setDeviceSchedule(String deviceId, String scheduleJson) {
+        return httpPut(API_URL + "/device/" + deviceId + "/schedule", scheduleJson);
+    }
+
+    public String setDeviceForecast(String deviceId, String forecastJson) {
+        return httpPut(API_URL + "/device/" + deviceId + "/forecast", forecastJson);
+    }
+
+    public String setDeviceState(String deviceId, String stateJson) {
+        return httpPut(API_URL + "/device/" + deviceId + "/state", stateJson);
+    }
+
+    public String setZoneState(String zoneId, String stateJson) {
+        return httpPut(API_URL + "/zone/" + zoneId + "/state", stateJson);
+    }
 }
