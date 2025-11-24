@@ -112,6 +112,23 @@ public class RachioHttp {
         return gson.fromJson(response, RachioPerson.class);
     }
 
+    // ADDED: Missing zone running methods
+    public String runZone(String zoneId, int duration) {
+        String jsonData = "{\"id\":\"" + zoneId + "\",\"duration\":" + duration + "}";
+        return httpPut(API_URL + "/zone/start", jsonData);
+    }
+
+    public String runAllZones(String deviceId, int duration) {
+        String jsonData = "{\"id\":\"" + deviceId + "\",\"duration\":" + duration + "}";
+        return httpPut(API_URL + "/device/start_water", jsonData);
+    }
+
+    public String runNextZone(String deviceId, int duration) {
+        String jsonData = "{\"id\":\"" + deviceId + "\",\"duration\":" + duration + "}";
+        return httpPut(API_URL + "/device/start_water", jsonData);
+    }
+
+    // Existing methods remain unchanged below...
     public RachioDevice getDevice(String deviceId) {
         String response = httpGet(API_URL + "/device/" + deviceId, "application/json");
         return gson.fromJson(response, RachioDevice.class);
