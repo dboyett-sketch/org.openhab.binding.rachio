@@ -1,106 +1,199 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>org.openhab.addons.bundles</groupId>
-        <artifactId>org.openhab.addons.reactor.bundles</artifactId>
-        <version>4.1.0</version>
-    </parent>
-
+    <groupId>org.openhab.addons.bundles</groupId>
     <artifactId>org.openhab.binding.rachio</artifactId>
-
-    <name>openHAB Add-ons :: Bundles :: Rachio Binding</name>
-    <description>openHAB binding for Rachio irrigation controllers</description>
-
+    <version>5.0.1-SNAPSHOT</version>
     <packaging>bundle</packaging>
 
+    <name>openHAB Add-ons :: Bundles :: Rachio Binding</name>
+    <description>Binding for Rachio smart irrigation controllers</description>
+    <url>https://www.openhab.org</url>
+
+    <repositories>
+        <repository>
+            <id>openhab</id>
+            <url>https://openhab.jfrog.io/artifactory/libs-release</url>
+        </repository>
+    </repositories>
+
+    <pluginRepositories>
+        <pluginRepository>
+            <id>openhab</id>
+            <url>https://openhab.jfrog.io/artifactory/libs-release</url>
+        </pluginRepository>
+        <pluginRepository>
+            <id>eclipse</id>
+            <url>https://repo.eclipse.org/content/groups/releases/</url>
+        </pluginRepository>
+    </pluginRepositories>
+
     <properties>
-        <bundle.namespace>org.openhab.binding.rachio</bundle.namespace>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <bundle.category>openhab-addons</bundle.category>
     </properties>
 
     <dependencies>
+        <!-- openHAB Core APIs -->
         <dependency>
-            <groupId>org.openhab.core</groupId>
+            <groupId>org.openhab.core.bundles</groupId>
+            <artifactId>org.openhab.core.config.core</artifactId>
+            <version>5.0.1</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.openhab.core.bundles</groupId>
+            <artifactId>org.openhab.core.config.discovery</artifactId>
+            <version>5.0.1</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.openhab.core.bundles</groupId>
             <artifactId>org.openhab.core.thing</artifactId>
+            <version>5.0.1</version>
+            <scope>provided</scope>
         </dependency>
+
+        <!-- Logging -->
         <dependency>
-            <groupId>org.openhab.core</groupId>
-            <artifactId>org.openhab.core.library</artifactId>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.36</version>
         </dependency>
+
+        <!-- Apache Commons Net -->
         <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-servlet</artifactId>
+            <groupId>commons-net</groupId>
+            <artifactId>commons-net</artifactId>
+            <version>3.9.0</version>
         </dependency>
+
+        <!-- Annotations -->
+        <dependency>
+            <groupId>org.eclipse.jdt</groupId>
+            <artifactId>org.eclipse.jdt.annotation</artifactId>
+            <version>2.2.600</version>
+        </dependency>
+
+        <!-- Gson -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
+            <version>2.10.1</version>
+            <scope>provided</scope>
         </dependency>
-        
-        <!-- ADD THESE MISSING DEPENDENCIES -->
+
+        <!-- Servlet API -->
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <version>4.0.1</version>
+            <scope>provided</scope>
         </dependency>
+
+        <!-- OSGi Core and Declarative Services -->
         <dependency>
-            <groupId>javax.measure</groupId>
-            <artifactId>unit-api</artifactId>
-        </dependency>
-        <!-- END OF ADDED DEPENDENCIES -->
-        
-        <!-- Test dependencies -->
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.core</artifactId>
+            <version>6.0.0</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-junit-jupiter</artifactId>
-            <scope>test</scope>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.service.component.annotations</artifactId>
+            <version>1.5.0</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.openhab.core</groupId>
-            <artifactId>org.openhab.core.test</artifactId>
-            <scope>test</scope>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.service.component</artifactId>
+            <version>1.4.0</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.service.http</artifactId>
+            <version>1.2.1</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- XStream -->
+        <dependency>
+            <groupId>com.thoughtworks.xstream</groupId>
+            <artifactId>xstream</artifactId>
+            <version>1.4.20</version>
         </dependency>
     </dependencies>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.felix</groupId>
+                    <artifactId>maven-bundle-plugin</artifactId>
+                    <version>5.1.4</version>
+                    <extensions>true</extensions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <includes>
+                    <include>**/*.xml</include>
+                    <include>**/*.properties</include>
+                </includes>
+                <filtering>false</filtering>
+            </resource>
+        </resources>
+
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-            </plugin>
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
+                <version>5.1.4</version>
                 <extensions>true</extensions>
                 <configuration>
                     <instructions>
-                        <Bundle-SymbolicName>${bundle.namespace}</Bundle-SymbolicName>
+                        <Bundle-SymbolicName>org.openhab.binding.rachio</Bundle-SymbolicName>
+                        <Bundle-Name>openHAB Add-ons :: Bundles :: Rachio Binding</Bundle-Name>
+                        <Bundle-Description>Binding for Rachio smart irrigation controllers</Bundle-Description>
+                        <Bundle-Vendor>openHAB Community</Bundle-Vendor>
+                        <Bundle-Version>${project.version}</Bundle-Version>
+                        <Bundle-Category>binding</Bundle-Category>
+                        <Include-Resource>
+                            OH-INF/thing/thing-types.xml=src/main/resources/OH-INF/thing/thing-types.xml,
+                            OH-INF/channel/channel-types.xml=src/main/resources/OH-INF/channel/channel-types.xml,
+                            OH-INF/config/config.xml=src/main/resources/OH-INF/config/config.xml,
+                            OSGI-INF/binding/binding.xml=src/main/resources/OSGI-INF/binding/binding.xml,
+                            binding.properties=src/main/resources/binding.properties,
+                            {maven-resources}
+                        </Include-Resource>
+                        <Openhab-Binding>true</Openhab-Binding>
+                        <_dsannotations>*</_dsannotations>
+                        <Service-Component>*</Service-Component>
+                        <Meta-Persistence>OSGI-INF/binding/binding.xml</Meta-Persistence>
                         <Import-Package>
-                            !com.google.gson,
-                            !com.google.gson.*,
+                            org.openhab.core.*;version="[5.0,6)",
+                            org.osgi.framework,
+                            org.osgi.service.*,
+                            org.osgi.util.tracker,
+                            org.osgi.service.component.annotations;version="[1.5,2)",
+                            org.slf4j,
+                            javax.servlet,
+                            javax.servlet.http,
                             *
                         </Import-Package>
                         <Export-Package>
-                            org.openhab.binding.rachio.internal.*
+                            org.openhab.binding.rachio,
+                            org.openhab.binding.rachio.handler,
+                            org.openhab.binding.rachio.internal
                         </Export-Package>
-                        <Embed-Dependency>
-                            gson;scope=compile|runtime;inline=false
-                        </Embed-Dependency>
                     </instructions>
                 </configuration>
             </plugin>
