@@ -37,6 +37,7 @@ public class RachioZoneHandler extends BaseThingHandler {
     private final Logger logger = LoggerFactory.getLogger(RachioZoneHandler.class);
 
     private @Nullable String zoneId;
+    private @Nullable String deviceId;
     private @Nullable RachioHttp localApi;
     private @Nullable ScheduledFuture<?> refreshJob;
 
@@ -63,20 +64,28 @@ public class RachioZoneHandler extends BaseThingHandler {
             switch (channelUID.getId()) {
                 case CHANNEL_ZONE_RUN:
                     if (command instanceof QuantityType) {
-                        // FIXED: Updated to use runZone method
+                        // FIXED: Handle QuantityType properly without type parameter issues
                         QuantityType<?> quantity = (QuantityType<?>) command;
-                        int duration = quantity.intValue();
-                        localApi.runZone(localZoneId, duration);
-                        logger.debug("Started zone {} for {} seconds", localZoneId, duration);
+                        int duration = quantity.toBigDecimal().intValue();
+                        String response = localApi.runZone(localZoneId, duration);
+                        if (response != null && !response.isEmpty()) {
+                            logger.debug("Started zone {} for {} seconds", localZoneId, duration);
+                        } else {
+                            logger.debug("Failed to start zone {}", localZoneId);
+                        }
                     }
                     break;
                 case CHANNEL_ZONE_RUN_DURATION:
                     if (command instanceof QuantityType) {
-                        // FIXED: Updated to use runZone method
+                        // FIXED: Handle QuantityType properly without type parameter issues
                         QuantityType<?> quantity = (QuantityType<?>) command;
-                        int duration = quantity.intValue();
-                        localApi.runZone(localZoneId, duration);
-                        logger.debug("Started zone {} for {} seconds", localZoneId, duration);
+                        int duration = quantity.toBigDecimal().intValue();
+                        String response = localApi.runZone(localZoneId, duration);
+                        if (response != null && !response.isEmpty()) {
+                            logger.debug("Started zone {} for {} seconds via duration channel", localZoneId, duration);
+                        } else {
+                            logger.debug("Failed to start zone {} via duration channel", localZoneId);
+                        }
                     }
                     break;
                 default:
@@ -91,29 +100,30 @@ public class RachioZoneHandler extends BaseThingHandler {
     public void initialize() {
         logger.debug("Initializing Rachio zone handler");
         zoneId = (String) getThing().getConfiguration().get(PROPERTY_ZONE_ID);
+        deviceId = (String) getThing().getConfiguration().get(PROPERTY_DEVICE_ID);
 
         if (zoneId == null || zoneId.isEmpty()) {
-            // FIXED: Updated ThingStatus call
+            // FIXED: Updated ThingStatus call with proper parameters
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "Zone ID not configured");
             return;
         }
 
         RachioBridgeHandler bridgeHandler = getBridgeHandler();
         if (bridgeHandler == null) {
-            // FIXED: Updated ThingStatus call
+            // FIXED: Updated ThingStatus call with proper parameters
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.BRIDGE_OFFLINE, "Bridge not available");
             return;
         }
 
         localApi = bridgeHandler.getApi();
         if (localApi == null) {
-            // FIXED: Updated ThingStatus call
+            // FIXED: Updated ThingStatus call with proper parameters
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.BRIDGE_OFFLINE, "Bridge API not available");
             return;
         }
 
-        // FIXED: Updated ThingStatus call
-        updateStatus(ThingStatus.ONLINE);
+        // FIXED: Updated ThingStatus call with proper parameters
+        updateStatus(ThingStatus.ONLINE, ThingStatusDetail.NONE, "Zone initialized successfully");
         startRefreshJob();
     }
 
@@ -143,10 +153,17 @@ public class RachioZoneHandler extends BaseThingHandler {
                 RachioZone zone = localApi.getZone(localZoneId);
                 if (zone != null) {
                     updateZoneChannels(zone);
+                    // FIXED: Updated ThingStatus call with proper parameters
+                    updateStatus(ThingStatus.ONLINE, ThingStatusDetail.NONE, "Zone status updated");
+                } else {
+                    // FIXED: Updated ThingStatus call with proper parameters
+                    updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, "Failed to get zone status");
                 }
             }
         } catch (Exception e) {
             logger.debug("Error refreshing zone status: {}", e.getMessage(), e);
+            // FIXED: Updated ThingStatus call with proper parameters
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, "Refresh error: " + e.getMessage());
         }
     }
 
@@ -154,6 +171,13 @@ public class RachioZoneHandler extends BaseThingHandler {
         // Update zone channels with current status
         // Implementation depends on your channel structure
         logger.debug("Updating channels for zone: {}", zone.getId());
+        
+        // Example channel updates - adjust based on your actual channels
+        if (zone.getName() != null) {
+            updateState(CHANNEL_ZONE_STATUS, new org.openhab.core.library.types.StringType(zone.getName()));
+        }
+        
+        // Add more channel updates as needed based on your zone properties
     }
 
     @Override
@@ -164,5 +188,13 @@ public class RachioZoneHandler extends BaseThingHandler {
             refreshJob = null;
         }
         super.dispose();
+    }
+
+    public @Nullable String getZoneId() {
+        return zoneId;
+    }
+
+    public @Nullable String getDeviceId() {
+        return deviceId;
     }
 }
