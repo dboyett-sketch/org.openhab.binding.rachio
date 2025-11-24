@@ -1,79 +1,131 @@
 package org.openhab.binding.rachio.internal.api;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
-import org.openhab.binding.rachio.internal.handler.RachioZoneHandler;
-
-import com.google.gson.annotations.SerializedName;
+import org.eclipse.jdt.annotation.Nullable;
 
 /**
- * The {@link RachioZone} is responsible for holding
- * all the properties of a Rachio zone
+ * The {@link RachioZone} class represents a Rachio irrigation zone
  *
- * @author Michael Lobstein - Initial contribution
+ * @author Damion Boyett - Initial contribution
  */
-
 @NonNullByDefault
 public class RachioZone {
-    private String id = "";
-    private String name = "";
-    private int zoneNumber = 0;
-    private boolean enabled = false;
-
-    @SerializedName("duration")
-    private int duration = 0;
-
-    private transient RachioZoneHandler handler;
-
-    public String getId() {
-        return id;
+    // Public fields to match the API JSON structure
+    public @Nullable String id;
+    public @Nullable String name;
+    public @Nullable Integer zoneNumber;
+    public @Nullable Boolean enabled;
+    public @Nullable String imageUrl;
+    public @Nullable Double efficiency;
+    public @Nullable Double runtime;
+    public @Nullable Boolean isRunning;
+    public @Nullable String status;
+    public @Nullable Double depthOfWater;
+    public @Nullable Double maxRuntime;
+    
+    // Default constructor
+    public RachioZone() {
     }
-
-    public void setId(String id) {
+    
+    // GETTER METHODS
+    public @Nullable String getId() { 
+        return id; 
+    }
+    
+    public @Nullable String getName() { 
+        return name; 
+    }
+    
+    public @Nullable Integer getZoneNumber() { 
+        return zoneNumber; 
+    }
+    
+    public @Nullable Boolean getEnabled() { 
+        return enabled; 
+    }
+    
+    public @Nullable String getImageUrl() { 
+        return imageUrl; 
+    }
+    
+    public @Nullable Double getEfficiency() { 
+        return efficiency; 
+    }
+    
+    public @Nullable Double getRuntime() { 
+        return runtime; 
+    }
+    
+    public @Nullable Boolean getIsRunning() { 
+        return isRunning; 
+    }
+    
+    public @Nullable String getStatus() { 
+        return status; 
+    }
+    
+    public @Nullable Double getDepthOfWater() { 
+        return depthOfWater; 
+    }
+    
+    public @Nullable Double getMaxRuntime() { 
+        return maxRuntime; 
+    }
+    
+    // SETTER METHODS
+    public void setId(@Nullable String id) {
         this.id = id;
     }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
+    
+    public void setName(@Nullable String name) {
         this.name = name;
     }
-
-    public int getZoneNumber() {
-        return zoneNumber;
-    }
-
-    public void setZoneNumber(int zoneNumber) {
+    
+    public void setZoneNumber(@Nullable Integer zoneNumber) {
         this.zoneNumber = zoneNumber;
     }
-
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(boolean enabled) {
+    
+    public void setEnabled(@Nullable Boolean enabled) {
         this.enabled = enabled;
     }
-
-    public int getDuration() {
-        return duration;
+    
+    public void setImageUrl(@Nullable String imageUrl) {
+        this.imageUrl = imageUrl;
     }
-
-    public void setDuration(int duration) {
-        this.duration = duration;
+    
+    public void setEfficiency(@Nullable Double efficiency) {
+        this.efficiency = efficiency;
     }
-
-    public boolean isRunning() {
-        // TODO: implement this
-        return false;
+    
+    public void setRuntime(@Nullable Double runtime) {
+        this.runtime = runtime;
     }
-
-    public void setHandler(RachioZoneHandler handler) {
-        this.handler = handler;
+    
+    public void setIsRunning(@Nullable Boolean isRunning) {
+        this.isRunning = isRunning;
     }
-
-    public RachioZoneHandler getHandler() {
-        return handler;
+    
+    public void setStatus(@Nullable String status) {
+        this.status = status;
+    }
+    
+    public void setDepthOfWater(@Nullable Double depthOfWater) {
+        this.depthOfWater = depthOfWater;
+    }
+    
+    public void setMaxRuntime(@Nullable Double maxRuntime) {
+        this.maxRuntime = maxRuntime;
+    }
+    
+    @Override
+    public String toString() {
+        return "RachioZone{" +
+                "id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                ", zoneNumber=" + zoneNumber +
+                ", enabled=" + enabled +
+                ", isRunning=" + isRunning +
+                ", status='" + status + '\'' +
+                '}';
     }
 }
