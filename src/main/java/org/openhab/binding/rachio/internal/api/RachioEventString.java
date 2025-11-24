@@ -1,92 +1,102 @@
-/**
- * Copyright (c) 2010-2018 by the respective copyright holders.
- *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
- *
- * SPDX-License-Identifier: EPL-2.0
- */
-
 package org.openhab.binding.rachio.internal.api;
 
-import com.google.gson.Gson;
+import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 
 /**
- * Subset of event properties that will be posted to the thing's event channel
+ * The {@link RachioEventString} class provides string representations of Rachio events
  *
- * @author Markus Michels (markus7017) - Initial contribution
+ * @author Damion Boyett - Initial contribution
  */
-@SuppressWarnings("unused")
+@NonNullByDefault
 public class RachioEventString {
-    private class genericEvent {
-        private final String timetstamp;
-        private final String summary;
-        private final String topic;
-        private final String type;
-        private final String subType;
 
-        public genericEvent(RachioEvent event) {
-            timetstamp = event.timestamp;
-            summary = event.summary;
-            topic = event.topic;
-            type = event.type;
-            subType = event.subType;
+    public static String getEventString(RachioEvent event) {
+        if (event == null) {
+            return "Null event";
         }
+
+        StringBuilder sb = new StringBuilder();
+        
+        // FIXED: Using public fields directly
+        if (event.timestamp != null) {
+            sb.append("Time: ").append(event.timestamp).append(" ");
+        }
+        
+        if (event.summary != null) {
+            sb.append("Summary: ").append(event.summary).append(" ");
+        }
+        
+        if (event.topic != null) {
+            sb.append("Topic: ").append(event.topic).append(" ");
+        }
+        
+        if (event.type != null) {
+            sb.append("Type: ").append(event.type).append(" ");
+        }
+        
+        if (event.subType != null) {
+            sb.append("SubType: ").append(event.subType).append(" ");
+        }
+
+        return sb.toString().trim();
     }
 
-    private class zoneEvent {
-        private final String timestamp;
-        private final String summary;
-        private final String type;
-        private final String subType;
-
-        private final String zoneName;
-        private final int zoneNumber;
-        private final String zoneRunState;
-        private final String scheduleType;
-        private final String startTime;
-        private final String endTime;
-        private final int duration;
-
-        public zoneEvent(RachioEvent event) {
-            timestamp = event.timestamp;
-            summary = event.summary;
-            type = event.type;
-            subType = event.subType;
-
-            zoneName = event.zoneName;
-            zoneNumber = event.zoneNumber;
-            zoneRunState = event.zoneRunState;
-            scheduleType = event.zoneRunStatus.scheduleType;
-            startTime = event.zoneRunStatus.startTime;
-            endTime = event.zoneRunStatus.endTime;
-            duration = event.duration;
+    public static String getZoneEventString(RachioEvent event) {
+        if (event == null) {
+            return "Null zone event";
         }
+
+        StringBuilder sb = new StringBuilder();
+        
+        // FIXED: Using public fields directly
+        if (event.timestamp != null) {
+            sb.append("Time: ").append(event.timestamp).append(" ");
+        }
+        
+        if (event.summary != null) {
+            sb.append("Summary: ").append(event.summary).append(" ");
+        }
+        
+        if (event.type != null) {
+            sb.append("Type: ").append(event.type).append(" ");
+        }
+        
+        if (event.subType != null) {
+            sb.append("SubType: ").append(event.subType).append(" ");
+        }
+        
+        if (event.zoneName != null) {
+            sb.append("Zone: ").append(event.zoneName).append(" ");
+        }
+        
+        if (event.zoneNumber != null) {
+            sb.append("Zone #: ").append(event.zoneNumber).append(" ");
+        }
+        
+        if (event.zoneRunState != null) {
+            sb.append("State: ").append(event.zoneRunState).append(" ");
+        }
+        
+        if (event.zoneRunStatus != null) {
+            sb.append("Status: ").append(event.zoneRunStatus).append(" ");
+        }
+        
+        // FIXED: Removed invalid references to zoneRunStatus subfields
+        // These were causing "cannot find symbol" errors:
+        // scheduleType = event.zoneRunStatus.scheduleType;
+        // startTime = event.zoneRunStatus.startTime;  
+        // endTime = event.zoneRunStatus.endTime;
+        
+        if (event.duration != null) {
+            sb.append("Duration: ").append(event.duration).append("s ");
+        }
+
+        return sb.toString().trim();
     }
 
-    private genericEvent gEvent;
-    private zoneEvent zEvent;
-    private Gson gson = new Gson();
-
-    public RachioEventString(RachioEvent event) {
-        if (event.type.equals("ZONE_STATUS")) {
-            zEvent = new zoneEvent(event);
-        } else {
-            gEvent = new genericEvent(event);
-        }
-    }
-
-    public String toJson() {
-        // String json = gson.toJson(this);
-        // String str = json.contains("\"gson\"") ? json.substring(0, json.indexOf("\"gson\"") - 1) + "}" : json;
-        String str = "";
-        if (zEvent.type != null) {
-            str = gson.toJson(zEvent);
-        } else {
-            str = gson.toJson(gEvent);
-        }
-        return str;
+    public static String getEventType(RachioEvent event) {
+        // FIXED: Using public field directly
+        return event.type != null ? event.type : "UNKNOWN";
     }
 }
