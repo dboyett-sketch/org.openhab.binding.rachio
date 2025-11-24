@@ -7,7 +7,7 @@ import org.openhab.core.thing.ThingTypeUID;
  * The {@link RachioBindingConstants} class defines common constants, which are
  * used across the whole binding.
  *
- * @author Michael Lobstein - Initial contribution
+ * @author Damion Boyett - Initial contribution
  */
 @NonNullByDefault
 public class RachioBindingConstants {
@@ -20,33 +20,32 @@ public class RachioBindingConstants {
     public static final ThingTypeUID THING_TYPE_ZONE = new ThingTypeUID(BINDING_ID, "zone");
 
     // List of all Channel ids
-    public static final String CHANNEL_STATUS = "status";
-    public static final String CHANNEL_LAST_RAN = "lastRan";
-    public static final String CHANNEL_RUN_ALL_ZONES = "runAllZones";
-    public static final String CHANNEL_RUN_NEXT_ZONE = "runNextZone";
-
-    public static final String CHANNEL_ZONE_PREFIX = "zone";
     public static final String CHANNEL_ZONE_RUN = "run";
-    public static final String CHANNEL_ZONE_RUNNING = "Running";
-    public static final String CHANNEL_ZONE_DURATION = "Duration";
+    public static final String CHANNEL_ZONE_RUN_DURATION = "runDuration";
+    public static final String CHANNEL_DEVICE_RUN_ALL_ZONES = "runAllZones";
+    public static final String CHANNEL_DEVICE_RUN_NEXT_ZONE = "runNextZone";
+    public static final String CHANNEL_DEVICE_STOP_WATERING = "stopWatering";
+    public static final String CHANNEL_DEVICE_RAIN_DELAY = "rainDelay";
+    public static final String CHANNEL_DEVICE_STATUS = "status";
+    public static final String CHANNEL_ZONE_STATUS = "status";
 
-    // List of all Properties
-    public static final String PROPERTY_ID = "id";
+    // List of all Property names
     public static final String PROPERTY_DEVICE_ID = "deviceId";
     public static final String PROPERTY_ZONE_ID = "zoneId";
-    public static final String PROPERTY_SERIAL_NUMBER = "serialNumber";
-    public static final String PROPERTY_ZONE_NUMBER = "zoneNumber";
+    public static final String PROPERTY_API_KEY = "apiKey";
+    public static final String PROPERTY_WEBHOOK_ID = "webhookId";
 
-    // Configuration parameters
+    // Bridge configuration parameters
     public static final String CONFIG_API_KEY = "apiKey";
-    public static final String CONFIG_WEBHOOK_ID = "webhookId";
+    public static final String CONFIG_REFRESH_INTERVAL = "refreshInterval";
+    public static final String CONFIG_WEBHOOK_URL = "webhookUrl";
+
+    // Device configuration parameters
     public static final String CONFIG_DEVICE_ID = "deviceId";
+
+    // Zone configuration parameters
     public static final String CONFIG_ZONE_ID = "zoneId";
-    public static final String CONFIG_ZONE_DURATION = "zoneDuration";
-    public static final String CONFIG_DURATION = "duration";
-    public static final String CONFIG_REFRESH = "refresh";
 
     // Default values
-    public static final int DEFAULT_REFRESH_PERIOD = 30;
-    public static final int DEFAULT_ZONE_DURATION = 300;
+    public static final int DEFAULT_REFRESH_INTERVAL = 60;
 }
