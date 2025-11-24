@@ -20,32 +20,22 @@ public class RachioBindingConstants {
     public static final ThingTypeUID THING_TYPE_ZONE = new ThingTypeUID(BINDING_ID, "zone");
 
     // List of all Channel ids
-    public static final String CHANNEL_ZONE_RUN = "run";
-    public static final String CHANNEL_ZONE_RUN_DURATION = "runDuration";
-    public static final String CHANNEL_DEVICE_RUN_ALL_ZONES = "runAllZones";
-    public static final String CHANNEL_DEVICE_RUN_NEXT_ZONE = "runNextZone";
-    public static final String CHANNEL_DEVICE_STOP_WATERING = "stopWatering";
-    public static final String CHANNEL_DEVICE_RAIN_DELAY = "rainDelay";
-    public static final String CHANNEL_DEVICE_STATUS = "status";
-    public static final String CHANNEL_ZONE_STATUS = "status";
+    public static final String CHANNEL_START_ALL_ZONES = "startAllZones";
+    public static final String CHANNEL_START_NEXT_ZONE = "startNextZone";
+    public static final String CHANNEL_STOP_WATERING = "stopWatering";
+    public static final String CHANNEL_RAIN_DELAY = "rainDelay";
+    public static final String CHANNEL_START_ZONE = "startZone";
 
-    // List of all Property names
-    public static final String PROPERTY_DEVICE_ID = "deviceId";
-    public static final String PROPERTY_ZONE_ID = "zoneId";
-    public static final String PROPERTY_API_KEY = "apiKey";
-    public static final String PROPERTY_WEBHOOK_ID = "webhookId";
+    // Bridge config properties
+    public static final String API_KEY = "apiKey";
+    public static final String WEBHOOK_ID = "webhookId";
 
-    // Bridge configuration parameters
-    public static final String CONFIG_API_KEY = "apiKey";
-    public static final String CONFIG_REFRESH_INTERVAL = "refreshInterval";
-    public static final String CONFIG_WEBHOOK_URL = "webhookUrl";
+    // Device config properties
+    public static final String DEVICE_ID = "deviceId";
 
-    // Device configuration parameters
-    public static final String CONFIG_DEVICE_ID = "deviceId";
+    // Zone config properties
+    public static final String ZONE_ID = "zoneId";
 
-    // Zone configuration parameters
-    public static final String CONFIG_ZONE_ID = "zoneId";
-
-    // Default values
-    public static final int DEFAULT_REFRESH_INTERVAL = 60;
+    // Default duration for watering in seconds
+    public static final int DEFAULT_DURATION = 300;
 }
