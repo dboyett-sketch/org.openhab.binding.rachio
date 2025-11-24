@@ -58,25 +58,50 @@ public class RachioDeviceHandler extends BaseThingHandler {
             switch (channelUID.getId()) {
                 case CHANNEL_DEVICE_RUN_ALL_ZONES:
                     if (command instanceof QuantityType) {
-                        // FIXED: Updated to use runAllZones method
+                        // FIXED: Handle QuantityType properly
                         QuantityType<?> quantity = (QuantityType<?>) command;
-                        int duration = quantity.intValue();
-                        localApi.runAllZones(localDeviceId, duration);
-                        logger.debug("Started all zones on device {} for {} seconds", localDeviceId, duration);
+                        int duration = quantity.toBigDecimal().intValue();
+                        String response = localApi.runAllZones(localDeviceId, duration);
+                        if (response != null && !response.isEmpty()) {
+                            logger.debug("Started all zones on device {} for {} seconds", localDeviceId, duration);
+                        } else {
+                            logger.debug("Failed to start all zones on device {}", localDeviceId);
+                        }
                     }
                     break;
                 case CHANNEL_DEVICE_RUN_NEXT_ZONE:
                     if (command instanceof QuantityType) {
-                        // FIXED: Updated to use runNextZone method
+                        // FIXED: Handle QuantityType properly
                         QuantityType<?> quantity = (QuantityType<?>) command;
-                        int duration = quantity.intValue();
-                        localApi.runNextZone(localDeviceId, duration);
-                        logger.debug("Started next zone on device {} for {} seconds", localDeviceId, duration);
+                        int duration = quantity.toBigDecimal().intValue();
+                        String response = localApi.runNextZone(localDeviceId, duration);
+                        if (response != null && !response.isEmpty()) {
+                            logger.debug("Started next zone on device {} for {} seconds", localDeviceId, duration);
+                        } else {
+                            logger.debug("Failed to start next zone on device {}", localDeviceId);
+                        }
                     }
                     break;
                 case CHANNEL_DEVICE_STOP_WATERING:
-                    localApi.stopWatering(localDeviceId);
-                    logger.debug("Stopped watering on device {}", localDeviceId);
+                    String response = localApi.stopWatering(localDeviceId);
+                    if (response != null && !response.isEmpty()) {
+                        logger.debug("Stopped watering on device {}", localDeviceId);
+                    } else {
+                        logger.debug("Failed to stop watering on device {}", localDeviceId);
+                    }
+                    break;
+                case CHANNEL_DEVICE_RAIN_DELAY:
+                    if (command instanceof QuantityType) {
+                        // FIXED: Handle QuantityType properly
+                        QuantityType<?> quantity = (QuantityType<?>) command;
+                        int duration = quantity.toBigDecimal().intValue();
+                        String rainDelayResponse = localApi.rainDelay(localDeviceId, duration);
+                        if (rainDelayResponse != null && !rainDelayResponse.isEmpty()) {
+                            logger.debug("Set rain delay on device {} for {} hours", localDeviceId, duration);
+                        } else {
+                            logger.debug("Failed to set rain delay on device {}", localDeviceId);
+                        }
+                    }
                     break;
                 default:
                     logger.debug("Unhandled channel: {}", channelUID.getId());
@@ -92,27 +117,27 @@ public class RachioDeviceHandler extends BaseThingHandler {
         deviceId = (String) getThing().getConfiguration().get(PROPERTY_DEVICE_ID);
 
         if (deviceId == null || deviceId.isEmpty()) {
-            // FIXED: Updated ThingStatus call
+            // FIXED: Updated ThingStatus call with proper parameters
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "Device ID not configured");
             return;
         }
 
         RachioBridgeHandler bridgeHandler = getBridgeHandler();
         if (bridgeHandler == null) {
-            // FIXED: Updated ThingStatus call
+            // FIXED: Updated ThingStatus call with proper parameters
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.BRIDGE_OFFLINE, "Bridge not available");
             return;
         }
 
         localApi = bridgeHandler.getApi();
         if (localApi == null) {
-            // FIXED: Updated ThingStatus call
+            // FIXED: Updated ThingStatus call with proper parameters
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.BRIDGE_OFFLINE, "Bridge API not available");
             return;
         }
 
-        // FIXED: Updated ThingStatus call
-        updateStatus(ThingStatus.ONLINE);
+        // FIXED: Updated ThingStatus call with proper parameters
+        updateStatus(ThingStatus.ONLINE, ThingStatusDetail.NONE, "Device initialized successfully");
         startRefreshJob();
     }
 
@@ -142,17 +167,33 @@ public class RachioDeviceHandler extends BaseThingHandler {
                 RachioDevice device = localApi.getDevice(localDeviceId);
                 if (device != null) {
                     updateDeviceChannels(device);
+                    // FIXED: Updated ThingStatus call with proper parameters
+                    updateStatus(ThingStatus.ONLINE, ThingStatusDetail.NONE, "Device status updated");
+                } else {
+                    // FIXED: Updated ThingStatus call with proper parameters
+                    updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, "Failed to get device status");
                 }
             }
         } catch (Exception e) {
             logger.debug("Error refreshing device status: {}", e.getMessage(), e);
+            // FIXED: Updated ThingStatus call with proper parameters
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, "Refresh error: " + e.getMessage());
         }
     }
 
     private void updateDeviceChannels(RachioDevice device) {
         // Update device channels with current status
-        // Implementation depends on your channel structure
         logger.debug("Updating channels for device: {}", device.getName());
+        
+        // Example channel updates - adjust based on your actual channels
+        if (device.getStatus() != null) {
+            updateState(CHANNEL_DEVICE_STATUS, new org.openhab.core.library.types.StringType(device.getStatus()));
+        }
+        
+        // Update other channels as needed based on your device properties
+        if (device.getOn() != null) {
+            // You might have a channel for device power state
+        }
     }
 
     @Override
@@ -163,5 +204,13 @@ public class RachioDeviceHandler extends BaseThingHandler {
             refreshJob = null;
         }
         super.dispose();
+    }
+
+    public @Nullable String getDeviceId() {
+        return deviceId;
+    }
+
+    public @Nullable RachioHttp getApi() {
+        return localApi;
     }
 }
