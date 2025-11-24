@@ -3,6 +3,8 @@ package org.openhab.binding.rachio.internal.api;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 
+import com.google.gson.Gson;
+
 /**
  * The {@link RachioEvent} class represents a webhook event from Rachio
  *
@@ -33,6 +35,12 @@ public class RachioEvent {
         this.eventType = eventType;
         this.deviceId = deviceId;
         this.timestamp = timestamp;
+    }
+    
+    // ADDED: Missing fromJson method
+    public static RachioEvent fromJson(String json) {
+        Gson gson = new Gson();
+        return gson.fromJson(json, RachioEvent.class);
     }
     
     // GETTER METHODS - Add these to maintain encapsulation while fixing access issues
