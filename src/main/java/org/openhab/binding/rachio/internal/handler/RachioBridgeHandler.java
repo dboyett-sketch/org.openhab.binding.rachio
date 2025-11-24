@@ -178,6 +178,15 @@ public class RachioBridgeHandler extends BaseBridgeHandler {
         // Implement schedule status update logic
     }
 
+    // ADDED: Missing getDevice method
+    public @Nullable RachioDevice getDevice(String deviceId) {
+        RachioHttp localApi = this.localApi;
+        if (localApi != null) {
+            return localApi.getDevice(deviceId);
+        }
+        return null;
+    }
+
     @Override
     public void dispose() {
         ScheduledFuture<?> localRefreshJob = refreshJob;
@@ -198,6 +207,6 @@ public class RachioBridgeHandler extends BaseBridgeHandler {
 
     @Override
     public Collection<Class<? extends ThingHandlerService>> getServices() {
-        return Collections.singleton(RachioDiscoveryService.class);
+        return Collections.emptySet(); // FIXED: Remove discovery service reference for now
     }
 }
