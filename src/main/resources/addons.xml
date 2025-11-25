@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<addon xmlns="https://openhab.org/schemas/addon/v1.0.0">
+  <id>rachio</id>
+  <type>binding</type>
+  <name>Rachio Binding</name>
+  <description>Binding for Rachio Smart Sprinkler Controllers</description>
+  <author>Damion</author>
+  <version>5.0.1</version>
+  <config-description-uri>configurable:rachio</config-description-uri>
+  <connection>cloud</connection>
+  <countries></countries>
+  <license>EPL-2.0</license>
+  <source-url>https://github.com/markus7017/org.openhab.binding.rachio</source-url>
+  <documentation-url>https://www.openhab.org/addons/bindings/rachio/</documentation-url>
+  <issue-tracker-url>https://github.com/markus7017/org.openhab.binding.rachio/issues</issue-tracker-url>
+  <service-id>org.openhab.rachio</service-id>
+</addon>
