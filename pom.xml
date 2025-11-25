@@ -183,10 +183,7 @@
                         <Bundle-Category>binding</Bundle-Category>
                         <Include-Resource>
                             OH-INF/thing/thing-types.xml=src/main/resources/OH-INF/thing/thing-types.xml,
-                            OH-INF/channel/channel-types.xml=src/main/resources/OH-INF/channel/channel-types.xml,
-                            OH-INF/config/config.xml=src/main/resources/OH-INF/config/config.xml,
                             OSGI-INF/binding/binding.xml=src/main/resources/OSGI-INF/binding/binding.xml,
-                            binding.properties=src/main/resources/binding.properties,
                             {maven-resources}
                         </Include-Resource>
                         <Openhab-Binding>true</Openhab-Binding>
