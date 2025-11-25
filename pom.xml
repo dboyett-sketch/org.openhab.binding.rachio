@@ -190,7 +190,6 @@
                         </Include-Resource>
                         <Openhab-Binding>true</Openhab-Binding>
                         <_dsannotations>*</_dsannotations>
-                        <Service-Component>*</Service-Component>
                         <Import-Package>
                             org.openhab.core.*;version="[5.0,6)",
                             org.osgi.framework,
