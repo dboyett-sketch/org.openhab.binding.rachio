@@ -160,9 +160,12 @@
             <resource>
                 <directory>src/main/resources</directory>
                 <includes>
-                    <include>**/*.xml</include>
+                    <include>OH-INF/**</include>
                     <include>**/*.properties</include>
                 </includes>
+                <excludes>
+                    <exclude>OSGI-INF/**</exclude>
+                </excludes>
                 <filtering>false</filtering>
             </resource>
         </resources>
