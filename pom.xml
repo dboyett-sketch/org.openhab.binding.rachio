@@ -183,13 +183,11 @@
                         <Bundle-Category>binding</Bundle-Category>
                         <Include-Resource>
                             OH-INF/thing/thing-types.xml=src/main/resources/OH-INF/thing/thing-types.xml,
-                            OSGI-INF/binding/binding.xml=src/main/resources/OSGI-INF/binding/binding.xml,
                             {maven-resources}
                         </Include-Resource>
                         <Openhab-Binding>true</Openhab-Binding>
                         <_dsannotations>*</_dsannotations>
                         <Service-Component>*</Service-Component>
-                        <Meta-Persistence>OSGI-INF/binding/binding.xml</Meta-Persistence>
                         <Import-Package>
                             org.openhab.core.*;version="[5.0,6)",
                             org.osgi.framework,
