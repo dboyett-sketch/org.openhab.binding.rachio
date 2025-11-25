@@ -1,61 +1,49 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<thing:thing-types xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xmlns:thing="http://thing.eclipse.org/schemas/binding/thing-types/v1.0.0"
-    xsi:schemaLocation="http://thing.eclipse.org/schemas/binding/thing-types/v1.0.0 http://thing.eclipse.org/schemas/binding/thing-types-1.0.0.xsd">
+<thing:thing-descriptions bindingId="rachio"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:thing="https://openhab.org/schemas/thing-descriptions/v1.0.0">
 
-    <!-- Rachio Cloud Bridge -->
-    <thing:bridge-type id="bridge">
-        <thing:label>Rachio Cloud Bridge</thing:label>
-        <thing:description>Connects to Rachio Cloud API for sprinkler controller management</thing:description>
-        <thing:category>Network</thing:category>
-    </thing:bridge-type>
-
-    <!-- Rachio Device (Sprinkler Controller) -->
-    <thing:thing-type id="device">
-        <thing:label>Rachio Sprinkler Controller</thing:label>
-        <thing:description>Rachio Smart Sprinkler Controller Device</thing:description>
-        <thing:category>Irrigation</thing:category>
-        <thing:listed>true</thing:listed>
-        <thing:supported-bridge-type-ids>
-            <thing:bridge-type-id>rachio:bridge</thing:bridge-type-id>
-        </thing:supported-bridge-type-ids>
+    <thing-type id="controller">
+        <label>Rachio Controller</label>
+        <description>Rachio Smart Sprinkler Controller</description>
+        <category>Irrigation</category>
         
-        <thing:channels>
-            <thing:channel id="startAllZones" typeId="startAllZones">
-                <thing:label>Start All Zones</thing:label>
-                <thing:description>Start watering all zones</thing:description>
-            </thing:channel>
-            <thing:channel id="startNextZone" typeId="startNextZone">
-                <thing:label>Start Next Zone</thing:label>
-                <thing:description>Start watering the next zone in sequence</thing:description>
-            </thing:channel>
-            <thing:channel id="stopWatering" typeId="stopWatering">
-                <thing:label>Stop Watering</thing:label>
-                <thing:description>Stop all watering activities</thing:description>
-            </thing:channel>
-            <thing:channel id="rainDelay" typeId="rainDelay">
-                <thing:label>Rain Delay</thing:label>
-                <thing:description>Set rain delay in hours</thing:description>
-            </thing:channel>
-        </thing:channels>
-    </thing:thing-type>
-
-    <!-- Rachio Zone -->
-    <thing:thing-type id="zone">
-        <thing:label>Rachio Irrigation Zone</thing:label>
-        <thing:description>Individual irrigation zone for Rachio sprinkler controller</thing:description>
-        <thing:category>Irrigation</thing:category>
-        <thing:listed>true</thing:listed>
-        <thing:supported-bridge-type-ids>
-            <thing:bridge-type-id>rachio:bridge</thing:bridge-type-id>
-        </thing:supported-bridge-type-ids>
+        <config-description>
+            <parameter name="apiKey" type="text" required="true">
+                <label>API Key</label>
+                <description>Rachio API Key from https://app.rach.io/</description>
+            </parameter>
+            <parameter name="controllerId" type="text" required="true">
+                <label>Controller ID</label>
+                <description>Rachio Controller ID (found in Rachio app)</description>
+            </parameter>
+            <parameter name="refreshInterval" type="integer" min="30" max="3600">
+                <label>Refresh Interval</label>
+                <description>How often to refresh data in seconds (default: 60)</description>
+                <default>60</default>
+            </parameter>
+        </config-description>
         
-        <thing:channels>
-            <thing:channel id="startZone" typeId="startZone">
-                <thing:label>Start Zone</thing:label>
-                <thing:description>Start watering this zone</thing:description>
-            </thing:channel>
-        </thing:channels>
-    </thing:thing-type>
+        <!-- Note: Channels are defined programmatically in RachioHandler -->
+    </thing-type>
 
-</thing:thing-types>
+    <thing-type id="zone">
+        <label>Rachio Zone</label>
+        <description>Rachio Sprinkler Zone</description>
+        <category>Irrigation</category>
+        
+        <config-description>
+            <parameter name="zoneId" type="text" required="true">
+                <label>Zone ID</label>
+                <description>Rachio Zone ID</description>
+            </parameter>
+            <parameter name="controllerId" type="text" required="true">
+                <label>Controller ID</label>
+                <description>Parent Rachio Controller ID</description>
+            </parameter>
+        </config-description>
+        
+        <!-- Note: Channels are defined programmatically in RachioZoneHandler -->
+    </thing-type>
+
+</thing:thing-descriptions>
