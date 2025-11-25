@@ -14,6 +14,10 @@ import org.openhab.core.thing.binding.BaseThingHandlerFactory;
 import org.openhab.core.thing.binding.ThingHandler;
 import org.openhab.core.thing.binding.ThingHandlerFactory;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Deactivate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.openhab.binding.rachio.internal.RachioBindingConstants.*;
 
@@ -29,6 +33,18 @@ import static org.openhab.binding.rachio.internal.RachioBindingConstants.*;
 public class RachioHandlerFactory extends BaseThingHandlerFactory {
     private static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Set.of(THING_TYPE_BRIDGE, THING_TYPE_DEVICE,
             THING_TYPE_ZONE);
+    
+    private final Logger logger = LoggerFactory.getLogger(RachioHandlerFactory.class);
+
+    @Activate
+    public void activate() {
+        logger.debug("RachioHandlerFactory activated");
+    }
+
+    @Deactivate
+    public void deactivate() {
+        logger.debug("RachioHandlerFactory deactivated");
+    }
 
     @Override
     public boolean supportsThingType(ThingTypeUID thingTypeUID) {
