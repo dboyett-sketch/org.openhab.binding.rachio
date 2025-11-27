@@ -94,17 +94,22 @@ public class RachioDiscoveryService extends AbstractDiscoveryService {
     /**
      * Discover devices for a specific API key
      */
-    public void discoverDevices(String apiKey, ThingUID bridgeUID) {
+    public void discoverDevices(String apiKey, @Nullable ThingUID bridgeUID) {
         try {
             // Create a temporary thing ID for discovery
             String discoveryThingId = "discovery-" + System.currentTimeMillis();
             rachioHttp.registerThing(discoveryThingId, apiKey);
             
             RachioPerson person = rachioHttp.getPerson(discoveryThingId);
+            
+            // FIXED: Added null check to prevent NPE
             if (person != null && person.devices != null) {
                 for (RachioPerson.Device device : person.devices) {
                     deviceDiscovered(device, bridgeUID);
                 }
+                logger.info("Discovered {} Rachio devices", person.devices.size());
+            } else {
+                logger.warn("No devices found for the provided API key");
             }
             
             // Clean up
@@ -157,7 +162,10 @@ public class RachioDiscoveryService extends AbstractDiscoveryService {
     @Override
     protected void startBackgroundDiscovery() {
         logger.debug("Starting Rachio background discovery");
-        backgroundDiscoveryJob = scheduler.scheduleWithFixedDelay(this::startScan, 0, 60, TimeUnit.MINUTES);
+        ScheduledFuture<?> job = backgroundDiscoveryJob;
+        if (job == null || job.isCancelled()) {
+            backgroundDiscoveryJob = scheduler.scheduleWithFixedDelay(this::startScan, 0, 60, TimeUnit.MINUTES);
+        }
     }
 
     @Override
