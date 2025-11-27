@@ -35,7 +35,6 @@ public class RachioImageServlet extends HttpServlet {
     public void unsetRachioHandler(RachioHandler handler) {
         if (this.rachioHandler == handler) {
             this.rachioHandler = null;
-            logger.debug("RachioHandler unset from ImageServlet");
         }
     }
 
@@ -44,7 +43,7 @@ public class RachioImageServlet extends HttpServlet {
         if (rachioHandler != null) {
             rachioHandler.handleImageCall(req, resp);
         } else {
-            logger.warn("RachioImageServlet received request but no handler available");
+            logger.warn("Image request received but no handler available");
             resp.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
         }
     }
