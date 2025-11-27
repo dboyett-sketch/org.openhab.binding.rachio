@@ -1,5 +1,6 @@
 package org.openhab.binding.rachio.internal.api;
 
+import org.openhab.binding.rachio.internal.api.dto.RachioWebhookEvent;
 import java.io.IOException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
