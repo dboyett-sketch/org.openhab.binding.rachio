@@ -14,7 +14,10 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
-import org.openhab.binding.rachio.internal.api.RachioEvent;
+import org.openhab.binding.rachio.internal.api.dto.RachioWebhookEvent;
+import org.openhab.binding.rachio.internal.api.dto.RachioEventSummary;
+import org.openhab.binding.rachio.internal.api.dto.RachioPerson;
+import org.openhab.binding.rachio.internal.api.dto.RachioZone;
 import org.openhab.binding.rachio.internal.api.RachioHttp;
 import org.openhab.binding.rachio.internal.config.RachioConfiguration;
 import org.openhab.core.library.types.OnOffType;
