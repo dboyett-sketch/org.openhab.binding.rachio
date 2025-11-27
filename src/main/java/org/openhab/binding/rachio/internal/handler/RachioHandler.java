@@ -3,7 +3,6 @@ package org.openhab.binding.rachio.internal.handler;
 import static org.openhab.binding.rachio.internal.RachioBindingConstants.*;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.ScheduledFuture;
@@ -18,16 +17,13 @@ import org.openhab.binding.rachio.internal.api.RachioHttp;
 import org.openhab.binding.rachio.internal.api.dto.RachioWebhookEvent;
 import org.openhab.binding.rachio.internal.api.dto.RachioEventSummary;
 import org.openhab.binding.rachio.internal.api.dto.RachioPerson;
-import org.openhab.binding.rachio.internal.api.dto.RachioZone;
 import org.openhab.binding.rachio.internal.api.dto.RachioException;
 import org.openhab.binding.rachio.internal.config.RachioConfiguration;
-import org.openhab.core.library.types.DateTimeType;
 import org.openhab.core.library.types.DecimalType;
 import org.openhab.core.library.types.OnOffType;
 import org.openhab.core.library.types.QuantityType;
 import org.openhab.core.library.types.StringType;
 import org.openhab.core.library.unit.ImperialUnits;
-import org.openhab.core.thing.Channel;
 import org.openhab.core.thing.ChannelUID;
 import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingStatus;
@@ -36,8 +32,6 @@ import org.openhab.core.thing.binding.BaseThingHandler;
 import org.openhab.core.thing.binding.ThingHandlerService;
 import org.openhab.core.types.Command;
 import org.openhab.core.types.RefreshType;
-import org.openhab.core.types.State;
-import org.openhab.core.types.UnDefType;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
@@ -169,6 +163,7 @@ public class RachioHandler extends BaseThingHandler {
                 // Store the first device ID for webhook routing
                 if (this.deviceId == null) {
                     this.deviceId = device.id;
+                    logger.debug("Registered device ID for webhook routing: {}", device.id);
                 }
                 
                 RachioEventSummary summary = rachioHttp.getDeviceEventSummary(thingId, device.id);
