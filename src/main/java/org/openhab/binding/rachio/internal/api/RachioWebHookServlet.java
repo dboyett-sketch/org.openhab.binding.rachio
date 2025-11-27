@@ -35,7 +35,6 @@ public class RachioWebHookServlet extends HttpServlet {
     public void unsetRachioHandler(RachioHandler handler) {
         if (this.rachioHandler == handler) {
             this.rachioHandler = null;
-            logger.debug("RachioHandler unset from WebHookServlet");
         }
     }
 
@@ -45,7 +44,7 @@ public class RachioWebHookServlet extends HttpServlet {
             rachioHandler.handleWebhookCall(req);
             resp.setStatus(HttpServletResponse.SC_OK);
         } else {
-            logger.warn("RachioWebHookServlet received webhook but no handler available");
+            logger.warn("Webhook received but no handler available");
             resp.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
         }
     }
